@@ -1,4 +1,4 @@
-import { MetaData } from 'crock-toolbox'
+import { MetaData } from '@productive-codebases/toolbox'
 import { AsyncProcess } from '..'
 
 interface IWithLogsMetadata {

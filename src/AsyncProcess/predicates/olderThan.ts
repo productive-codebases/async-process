@@ -1,5 +1,5 @@
 import { AsyncProcess } from '..'
-import { Maybe, MetaData } from 'crock-toolbox'
+import { Maybe, MetaData } from '@productive-codebases/toolbox'
 
 /**
  * Return a predicate function to trigger async functions

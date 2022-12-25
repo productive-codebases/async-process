@@ -1,4 +1,4 @@
-import { Maybe } from 'crock-toolbox'
+import { Maybe } from '@productive-codebases/toolbox'
 import { AsyncProcess } from '../AsyncProcess'
 
 export type Fn = () => any
