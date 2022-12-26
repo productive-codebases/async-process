@@ -21,7 +21,7 @@ Typescript is not mandatory but highly recommended.
 ## Installation
 
 ```bash
-npm install asyncprocess
+npm install @productive-codebases/async-process
 ```
 
 ## Core concepts
