@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2016",
+    "sourceMap": true,
+    "declaration": true,
+    "declarationDir": "./dist/types",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noImplicitThis": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": false,
+    "removeComments": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "strictNullChecks": true,
+    "outDir": "dist",
+    "skipLibCheck": true,
+    "types": ["node", "jest"]
+  }
+}
