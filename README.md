@@ -1,4 +1,4 @@
-# Asyncprocess
+# AsyncProcess
 
 Reusable asynchronous processes declarations and actions.
 
