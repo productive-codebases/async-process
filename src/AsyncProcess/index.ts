@@ -28,7 +28,7 @@ export class AsyncProcess<TIdentifier extends string> {
     onErrorFns: new Set()
   }
 
-  private _predicateFn: Maybe<PredicateFn<TIdentifier>> = null
+  private _predicateFns: Set<PredicateFn<TIdentifier>> = new Set()
 
   /**
    * Static
@@ -69,7 +69,7 @@ export class AsyncProcess<TIdentifier extends string> {
    * Save a predicate function to trigger or not the process.
    */
   if(predicateFn: PredicateFn<TIdentifier>): this {
-    this._predicateFn = predicateFn
+    this._predicateFns.add(predicateFn)
     return this
   }
 
@@ -153,7 +153,7 @@ export class AsyncProcess<TIdentifier extends string> {
     this._error = null
 
     try {
-      if (this._predicateFn && !(await this._predicateFn(this))) {
+      if (this._predicateFns && !(await this.shouldStart())) {
         await this._execAsyncFns(this._fns.onSuccessFns)
         return this
       }
@@ -167,6 +167,18 @@ export class AsyncProcess<TIdentifier extends string> {
     }
 
     return this
+  }
+
+  /**
+   * Return a boolean according to registered predicates values.
+   */
+  async shouldStart(): Promise<boolean> {
+    for (const predicateFn of this._predicateFns) {
+      if (!(await predicateFn(this))) {
+        return false
+      }
+    }
+    return true
   }
 
   /**

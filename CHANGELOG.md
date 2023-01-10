@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.2.0
+
+### Added
+
+- Support multiple predicate functions.
+- Add an optional identifier in `withLogs` composite function to support multiple logging.
+
 ## v1.1.0
 
 ### Added

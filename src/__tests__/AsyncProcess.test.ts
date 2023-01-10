@@ -223,19 +223,24 @@ describe('AsyncProcess', () => {
   describe('Predicates', () => {
     it('should execute the async process if the predicate function is true', async () => {
       const fetchData = jest.fn()
+      const predicateFn1 = jest.fn().mockImplementation(() => true)
+      const predicateFn2 = jest.fn().mockImplementation(() => true)
       const onStartFn = jest.fn()
       const onSuccessFn = jest.fn()
       const onErrorFn = jest.fn()
 
       const asyncProcess = getAsyncProcessTestInstance('loadFoo')
         .do(() => fetchData())
-        .if(() => true)
+        .if(() => predicateFn1())
+        .if(() => predicateFn2())
         .onStart(onStartFn)
         .onSuccess(onSuccessFn)
         .onError(onErrorFn)
 
       await asyncProcess.start()
 
+      expect(predicateFn1).toHaveBeenCalled()
+      expect(predicateFn2).toHaveBeenCalled()
       expect(fetchData).toHaveBeenCalled()
       expect(onStartFn).toHaveBeenCalled()
       expect(onSuccessFn).toHaveBeenCalled()
@@ -244,19 +249,50 @@ describe('AsyncProcess', () => {
 
     it('should not execute the async process if the predicate function is false', async () => {
       const fetchData = jest.fn()
+      const predicateFn1 = jest.fn().mockImplementation(() => false)
       const onStartFn = jest.fn()
       const onSuccessFn = jest.fn()
       const onErrorFn = jest.fn()
 
       const asyncProcess = getAsyncProcessTestInstance('loadFoo')
         .do(() => fetchData())
-        .if(() => false)
+        .if(() => predicateFn1())
         .onStart(onStartFn)
         .onSuccess(onSuccessFn)
         .onError(onErrorFn)
 
       await asyncProcess.start()
 
+      expect(predicateFn1).toHaveBeenCalled()
+      expect(fetchData).not.toHaveBeenCalled()
+      expect(onStartFn).not.toHaveBeenCalled()
+      expect(onSuccessFn).toHaveBeenCalled()
+      expect(onErrorFn).not.toHaveBeenCalled()
+    })
+
+    it('should not execute the async process if one of the predicate functions is false', async () => {
+      const fetchData = jest.fn()
+      const predicateFn1 = jest.fn().mockImplementation(() => true)
+      const predicateFn2 = jest.fn().mockImplementation(() => true)
+      const predicateFn3 = jest.fn().mockImplementation(() => false)
+      const onStartFn = jest.fn()
+      const onSuccessFn = jest.fn()
+      const onErrorFn = jest.fn()
+
+      const asyncProcess = getAsyncProcessTestInstance('loadFoo')
+        .do(() => fetchData())
+        .if(() => predicateFn1())
+        .if(() => predicateFn2())
+        .if(() => predicateFn3())
+        .onStart(onStartFn)
+        .onSuccess(onSuccessFn)
+        .onError(onErrorFn)
+
+      await asyncProcess.start()
+
+      expect(predicateFn1).toHaveBeenCalled()
+      expect(predicateFn2).toHaveBeenCalled()
+      expect(predicateFn3).toHaveBeenCalled()
       expect(fetchData).not.toHaveBeenCalled()
       expect(onStartFn).not.toHaveBeenCalled()
       expect(onSuccessFn).toHaveBeenCalled()
@@ -331,7 +367,10 @@ describe('AsyncProcess', () => {
 
   describe('Singleton', () => {
     it('should return an unique instance for a same identifier', () => {
+      const successSpy = jest.fn()
+
       const foo1 = getAsyncProcessTestInstance('loadFoo')
+      foo1.onSuccess(() => successSpy())
       const foo2 = getAsyncProcessTestInstance('loadFoo')
 
       const bar1 = getAsyncProcessTestInstance('loadBar')
@@ -342,9 +381,17 @@ describe('AsyncProcess', () => {
 
       expect(foo1).not.toBe(bar1)
       expect(foo2).not.toBe(bar2)
+
+      expect(foo1.fns.onSuccessFns.size).toBe(1)
+      expect(foo2.fns.onSuccessFns.size).toBe(1)
     })
 
     it('should return an unique instance for same identifiers', () => {
+      const successSpy = jest.fn()
+
+      const foo1 = getAsyncProcessTestInstance('loadFoo')
+      foo1.onSuccess(() => successSpy())
+
       const foo1Dep1 = getAsyncProcessTestInstance('loadFoo', ['dep1'])
       const foo2Dep1 = getAsyncProcessTestInstance('loadFoo', ['dep1'])
 
@@ -354,10 +401,14 @@ describe('AsyncProcess', () => {
       expect(foo1Dep1).toBe(foo2Dep1)
       expect(foo1Dep2).toBe(foo2Dep2)
 
+      expect(foo1).not.toBe(foo1Dep1)
       expect(foo1Dep1).not.toBe(foo1Dep2)
 
       expect(foo1Dep1.identifier).toBe('loadFoo')
       expect(foo1Dep1.identitiers).toEqual(['loadFoo', 'dep1'])
+
+      expect(foo1.fns.onSuccessFns.size).toBe(1)
+      expect(foo1Dep1.fns.onSuccessFns.size).toBe(0)
     })
   })
 })
