@@ -97,22 +97,34 @@ Now, by using the `getAsyncProcessInstance` function everywhere in your codebase
 
 #### Concept
 
-`AsyncProcess` supports the passing of a predicate function allowing to start or not the declared process.
+`AsyncProcess` supports the passing of a predicate functions allowing to start or not the declared process.
 
-The type `PredicateFn<T>` can be used to enforce the typing of your predicate function:
+The type `PredicateFn<T>` can be used to enforce the typing of your predicate functions:
 
 ```ts
-const isUsersNotYetFetched =
-  // pass your store or any storage needed to implement your logic
-
-    (store: any): PredicateFn<AsyncProcessTestIdentifier> =>
-    asyncProcess => {
-      return store.users.length === 0
-    }
+function isUsersNotYetFetched(
+  // store is your storage implementation and could be anything
+  store: Store
+): PredicateFn<AsyncProcessTestIdentifier> {
+  return (/* asyncProcess instance is passed here */) => {
+    return store.users.length === 0
+  }
+}
 
 getAsyncProcessInstance('initUsersPage')
   // .do(...)
   .if(isUsersNotYetFetched(store))
+  .start()
+```
+
+You can add as many predicate functions as you want, all need to be resolved as a `Promise<boolean>` to trigger the process:
+
+```ts
+getAsyncProcessInstance('initUsersPage')
+  // .do(...)
+  .if(asyncProcess => somethingToDo())
+  .if(usersNotYetFetched())
+  .if(isFeatureFlagEnabled())
   .start()
 ```
 
@@ -143,32 +155,36 @@ It's interesting to note that [predicate implementation](./src/AsyncProcess/pred
 
 ### Composition
 
-`AsyncProcess` supports composition by "merging" existing instances. It is very useful to mutalize behaviors that should be generally the same for similar use cases.
+`AsyncProcess` supports composition by merging the functions of existing instances. It is very useful to mutalize behaviors between `AsyncProcess` instances.
 
-The `withLogs` function, exposed in the library, allows to log the start / success / error events:
+#### `withLogs` composite function
+
+This composite function is exposed in the library and allows to log the start / success / error events:
 
 ```ts
+const logger = console.log
+
 getAsyncProcessInstance('initUsersPage')
   .do(fetchUsers)
   .compose(withLogs(logger))
   .start()
 ```
 
-Also, note that the [composed function implementation](./src/AsyncProcess/composers/withLogs.ts) leverages on the metadata saved in the instance to register the logs function only once.
+#### Composite functions and optional identifiers
 
-With similar strategies, you can imagine having things like this:
+To manage the unicity of composite functions in each AsyncProcess instance, you can leverage metadata saved in the AsyncProcess and use it as an optional identifier.
+
+It allows guarantees that composite functions can't be registered twice except if it is intentional. For example:
 
 ```ts
 getAsyncProcessInstance('initUsersPage')
   .do(fetchUsers)
-  // add some logs
   .compose(withLogs(logger))
-  // add loadings state via a dedicated store
-  .compose(withStoreFlags(storeFlags))
+  .compose(withLogs(logger, 'optionalIdentifierToAddASecondLogger'))
   .start()
 ```
 
-You can even compose "earlier", directly in the `getAsyncProcessInstance` if you prefer, allowing to have "built-in" behaviors for all your `AsyncProcess` declarations.
+See [`withLogs`](https://github.com/productive-codebases/async-process/blob/main/src/AsyncProcess/composers/withLogs.ts) implementation for reference.
 
 ## Live example
 
