@@ -58,5 +58,22 @@ describe('Composers', () => {
         new Error('boom')
       )
     })
+
+    it('should logs various things by using different identifiers', async () => {
+      const logger1 = jest.fn()
+      const logger2 = jest.fn()
+      const logger3 = jest.fn()
+
+      await getAsyncProcessTestInstance('loadFoo')
+        .do(() => doSomething())
+        .compose(withLogs(logger1))
+        .compose(withLogs(logger2, 'secondLogger'))
+        .compose(withLogs(logger3, 'thirdLogger'))
+        .start()
+
+      expect(logger1).toHaveBeenCalledTimes(2)
+      expect(logger2).toHaveBeenCalledTimes(2)
+      expect(logger3).toHaveBeenCalledTimes(2)
+    })
   })
 })

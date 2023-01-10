@@ -2,7 +2,7 @@ import { MetaData } from '@productive-codebases/toolbox'
 import { AsyncProcess } from '..'
 
 interface IWithLogsMetadata {
-  withLogs: {
+  [identifier: string]: {
     initialized: boolean
   }
 }
@@ -11,13 +11,14 @@ interface IWithLogsMetadata {
  * Log states of an async process.
  */
 export function withLogs<TIdentifier extends string>(
-  logger: (message: string, ...args: any[]) => void
+  logger: (message: string, ...args: any[]) => void,
+  identifier = 'withLogs'
 ) {
   return (
     asyncProcess: AsyncProcess<TIdentifier>
   ): AsyncProcess<TIdentifier> => {
     const metadata = asyncProcess.metadata as MetaData<IWithLogsMetadata>
-    const composerMetadata = metadata.get('withLogs')
+    const composerMetadata = metadata.get(identifier)
 
     // avoid register again if already done
     if (composerMetadata?.initialized) {
@@ -31,7 +32,7 @@ export function withLogs<TIdentifier extends string>(
     })
 
     return AsyncProcess.instance<TIdentifier>(asyncProcess.identifier, [
-      'withLogs'
+      identifier
     ])
       .onStart(() => {
         logger('Start %s', asyncProcess.identifier)
