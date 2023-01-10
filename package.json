@@ -1,6 +1,6 @@
 {
   "name": "@productive-codebases/async-process",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Declare, configure and start asynchronous processes with ease.",
   "author": "Alexis MINEAUD",
   "license": "MIT",
