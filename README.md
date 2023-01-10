@@ -172,9 +172,7 @@ getAsyncProcessInstance('initUsersPage')
 
 #### Composite functions and optional identifiers
 
-To manage the unicity of composite functions in each AsyncProcess instance, you can leverage metadata saved in the AsyncProcess and use it as an optional identifier.
-
-It allows guarantees that composite functions can't be registered twice except if it is intentional. For example:
+To manage the unicity of composite functions in each AsyncProcess instance, you can leverage metadata saved in the AsyncProcess and use it as an optional identifier. This ensures that composite functions cannot be saved twice unless intentionally. For example:
 
 ```ts
 getAsyncProcessInstance('initUsersPage')
