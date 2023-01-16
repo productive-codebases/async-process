@@ -28,7 +28,7 @@ describe('Composers', () => {
       const logger = jest.fn()
 
       await getAsyncProcessTestInstance('loadFoo')
-        .do(() => doSomething())
+        .do(doSomething)
         .compose(withLogs(logger))
         .start()
 
@@ -65,7 +65,7 @@ describe('Composers', () => {
       const logger3 = jest.fn()
 
       await getAsyncProcessTestInstance('loadFoo')
-        .do(() => doSomething())
+        .do(doSomething)
         .compose(withLogs(logger1))
         .compose(withLogs(logger2, 'secondLogger'))
         .compose(withLogs(logger3, 'thirdLogger'))

@@ -43,7 +43,7 @@ describe('AsyncProcess', () => {
       const onErrorFn = jest.fn()
 
       const asyncProcess = getAsyncProcessTestInstance('loadFoo')
-        .do(() => fetchData())
+        .do(fetchData)
         .onStart(onStartFns)
         .onSuccess(onSuccessFns)
         .onError(onErrorFn)
@@ -86,7 +86,7 @@ describe('AsyncProcess', () => {
       const onErrorFn = jest.fn()
 
       const asyncProcess = getAsyncProcessTestInstance('loadFoo')
-        .do(() => fetchData())
+        .do(fetchData)
         .onStart(onStartFns)
         .onSuccess(onSuccessFns)
         .onError(onErrorFn)
@@ -105,9 +105,7 @@ describe('AsyncProcess', () => {
         })
       }
 
-      const asyncProcess = getAsyncProcessTestInstance('loadFoo').do(() =>
-        fetchData()
-      )
+      const asyncProcess = getAsyncProcessTestInstance('loadFoo').do(fetchData)
 
       const doSomethingAfterAsyncProcess = jest.fn()
 
@@ -132,7 +130,7 @@ describe('AsyncProcess', () => {
       const onErrorFn = jest.fn()
 
       const asyncProcess = getAsyncProcessTestInstance('loadFoo')
-        .do(() => fetchData())
+        .do(fetchData)
         .onStart(onStartFns)
         .onSuccess(onSuccessFns)
         .onError(onErrorFn)
@@ -164,7 +162,7 @@ describe('AsyncProcess', () => {
       const onErrorFn = jest.fn()
 
       const asyncProcess = getAsyncProcessTestInstance('loadFoo')
-        .do(() => fetchData())
+        .do(fetchData)
         .onError(onErrorFn)
 
       await asyncProcess.start()
@@ -181,9 +179,7 @@ describe('AsyncProcess', () => {
         })
       }
 
-      const asyncProcess = getAsyncProcessTestInstance('loadFoo').do(() =>
-        fetchData()
-      )
+      const asyncProcess = getAsyncProcessTestInstance('loadFoo').do(fetchData)
 
       await asyncProcess.start()
 
@@ -208,7 +204,7 @@ describe('AsyncProcess', () => {
       }
 
       const asyncProcess = getAsyncProcessTestInstance('loadFoo')
-        .do(() => fetchData())
+        .do(fetchData)
         .onError(setErrorMessage('Something bad happened'))
 
       const doSomethingAfterAsyncProcess = jest.fn()
@@ -217,6 +213,83 @@ describe('AsyncProcess', () => {
 
       expect(doSomethingAfterAsyncProcess).toHaveBeenCalled()
       expect(errorMessage).toEqual('Something bad happened')
+    })
+  })
+
+  describe('Identifiers', () => {
+    describe('onStart', () => {
+      it('should use a default identifier so that fns are replaced by default', () => {
+        const startSpy1 = jest.fn()
+        const startSpy2 = jest.fn()
+
+        const foo1 = getAsyncProcessTestInstance('loadFoo')
+        foo1.onStart(startSpy1)
+
+        const foo2 = getAsyncProcessTestInstance('loadFoo')
+        foo2.onStart(startSpy1)
+        foo2.onStart(startSpy2)
+
+        // register only `startSpy2` because added last
+        expect(foo1.fns.onStartFns.size).toBe(1)
+      })
+    })
+
+    describe('onSuccess', () => {
+      it('should use a default identifier so that fns are replaced by default', () => {
+        const successSpy1 = jest.fn()
+        const successSpy2 = jest.fn()
+
+        const foo1 = getAsyncProcessTestInstance('loadFoo')
+        foo1.onSuccess(successSpy1)
+
+        const foo2 = getAsyncProcessTestInstance('loadFoo')
+        foo2.onSuccess(successSpy1)
+        foo2.onSuccess(successSpy2)
+
+        // register only `successSpy2` because added last
+        expect(foo1.fns.onSuccessFns.size).toBe(1)
+      })
+
+      it('should allow using an identifier to add several fns', async () => {
+        const successSpy1 = jest.fn()
+        const successSpy2 = jest.fn()
+        const successSpy3 = jest.fn()
+        const successSpy4 = jest.fn()
+
+        const foo1 = getAsyncProcessTestInstance('loadFoo')
+        foo1.onSuccess([successSpy1, successSpy2], 'success1')
+
+        const foo2 = getAsyncProcessTestInstance('loadFoo')
+        foo2.onSuccess([successSpy3, successSpy4], 'success2')
+
+        // register `[successSpy1, successSpy2]` and `[successSpy3, successSpy4]`, so 2 entries
+        expect(foo1.fns.onSuccessFns.size).toBe(2)
+
+        await foo1.start()
+
+        // check that the 4 fns have been called
+        expect(successSpy1).toHaveBeenCalled()
+        expect(successSpy2).toHaveBeenCalled()
+        expect(successSpy3).toHaveBeenCalled()
+        expect(successSpy4).toHaveBeenCalled()
+      })
+    })
+
+    describe('onError', () => {
+      it('should use a default identifier so that fns are replaced by default', () => {
+        const errorSpy1 = jest.fn()
+        const errorSpy2 = jest.fn()
+
+        const foo1 = getAsyncProcessTestInstance('loadFoo')
+        foo1.onError(errorSpy1)
+
+        const foo2 = getAsyncProcessTestInstance('loadFoo')
+        foo2.onError(errorSpy1)
+        foo2.onError(errorSpy2)
+
+        // register only `errorSpy2` because added last
+        expect(foo1.fns.onErrorFns.size).toBe(1)
+      })
     })
   })
 
@@ -230,9 +303,9 @@ describe('AsyncProcess', () => {
       const onErrorFn = jest.fn()
 
       const asyncProcess = getAsyncProcessTestInstance('loadFoo')
-        .do(() => fetchData())
-        .if(() => predicateFn1())
-        .if(() => predicateFn2())
+        .do(fetchData)
+        .if(predicateFn1)
+        .if(predicateFn2)
         .onStart(onStartFn)
         .onSuccess(onSuccessFn)
         .onError(onErrorFn)
@@ -255,8 +328,8 @@ describe('AsyncProcess', () => {
       const onErrorFn = jest.fn()
 
       const asyncProcess = getAsyncProcessTestInstance('loadFoo')
-        .do(() => fetchData())
-        .if(() => predicateFn1())
+        .do(fetchData)
+        .if(predicateFn1)
         .onStart(onStartFn)
         .onSuccess(onSuccessFn)
         .onError(onErrorFn)
@@ -280,10 +353,10 @@ describe('AsyncProcess', () => {
       const onErrorFn = jest.fn()
 
       const asyncProcess = getAsyncProcessTestInstance('loadFoo')
-        .do(() => fetchData())
-        .if(() => predicateFn1())
-        .if(() => predicateFn2())
-        .if(() => predicateFn3())
+        .do(fetchData)
+        .if(predicateFn1)
+        .if(predicateFn2)
+        .if(predicateFn3)
         .onStart(onStartFn)
         .onSuccess(onSuccessFn)
         .onError(onErrorFn)
@@ -311,12 +384,14 @@ describe('AsyncProcess', () => {
         })
       }
 
-      const onStartgFn1 = jest.fn()
-      const onStartgFn2 = jest.fn()
+      const onStartFn0 = jest.fn()
+      const onStartFn1 = jest.fn()
+      const onStartFn2 = jest.fn()
+      const onStartFn3 = jest.fn()
+      const onStartFn4 = jest.fn()
 
-      // Add two same functions, should be unique at the end
-      const onStartFns = [onStartgFn1, onStartgFn1, onStartgFn2]
-      const onSuccessFns = [jest.fn()]
+      const onSuccessFn = jest.fn()
+
       const onErrorFn = jest.fn()
 
       let asyncProcessBaseIdentifiers
@@ -326,10 +401,13 @@ describe('AsyncProcess', () => {
       ) => {
         const baseAsyncProcess = getAsyncProcessTestInstance(
           asyncProcess.identifier,
-          ['dep1', 'dep2']
+          ['id1', 'id2']
         )
-          .onStart(onStartFns)
-          .onSuccess(onSuccessFns)
+          // define custom identifiers for each fns addition
+          .onStart(onStartFn1, 'onStartFn1')
+          .onStart(onStartFn2, 'onStartFn2')
+          .onStart([onStartFn3, onStartFn4], 'onStartFn3+onStartFn4')
+          .onSuccess(onSuccessFn)
           .onError(onErrorFn)
 
         asyncProcessBaseIdentifiers = baseAsyncProcess.identitiers
@@ -338,30 +416,31 @@ describe('AsyncProcess', () => {
       }
 
       const asyncProcess = getAsyncProcessTestInstance('loadFoo')
-        .do(() => fetchData())
+        .do(fetchData)
+        .onStart(onStartFn0, 'onStartFn0')
         .compose(asyncProcessExtended)
 
       await asyncProcess.start()
 
-      onStartFns.forEach(onStartFn => {
-        expect(onStartFn).toHaveBeenCalled()
-      })
+      expect(onStartFn0).toHaveBeenCalled()
+      expect(onStartFn1).toHaveBeenCalled()
+      expect(onStartFn2).toHaveBeenCalled()
+      expect(onStartFn3).toHaveBeenCalled()
+      expect(onStartFn4).toHaveBeenCalled()
 
-      onSuccessFns.forEach(onSuccessFn => {
-        expect(onSuccessFn).toHaveBeenCalled()
-      })
+      expect(onSuccessFn).toHaveBeenCalled()
 
       expect(onErrorFn).not.toHaveBeenCalled()
 
-      // Dedup same functions
-      expect(asyncProcess.fns.onStartFns.size).toEqual(2)
+      // Count the number of additions (by uniq identifiers) of onStartFns entries
+      expect(asyncProcess.fns.onStartFns.size).toEqual(4)
 
       expect(data).toEqual({
         id: 1,
         name: 'Bob'
       })
 
-      expect(asyncProcessBaseIdentifiers).toEqual(['loadFoo', 'dep1/dep2'])
+      expect(asyncProcessBaseIdentifiers).toEqual(['loadFoo', 'id1/id2'])
     })
   })
 
@@ -370,7 +449,7 @@ describe('AsyncProcess', () => {
       const successSpy = jest.fn()
 
       const foo1 = getAsyncProcessTestInstance('loadFoo')
-      foo1.onSuccess(() => successSpy())
+      foo1.onSuccess(successSpy)
       const foo2 = getAsyncProcessTestInstance('loadFoo')
 
       const bar1 = getAsyncProcessTestInstance('loadBar')
@@ -390,7 +469,7 @@ describe('AsyncProcess', () => {
       const successSpy = jest.fn()
 
       const foo1 = getAsyncProcessTestInstance('loadFoo')
-      foo1.onSuccess(() => successSpy())
+      foo1.onSuccess(successSpy)
 
       const foo1Dep1 = getAsyncProcessTestInstance('loadFoo', ['dep1'])
       const foo2Dep1 = getAsyncProcessTestInstance('loadFoo', ['dep1'])

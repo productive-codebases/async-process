@@ -22,10 +22,10 @@ export class AsyncProcess<TIdentifier extends string> {
   private _error: Maybe<Error> = null
 
   private _fns: IAsyncProcessFns = {
-    asyncFns: new Set(),
-    onStartFns: new Set(),
-    onSuccessFns: new Set(),
-    onErrorFns: new Set()
+    asyncFns: new Map(),
+    onStartFns: new Map(),
+    onSuccessFns: new Map(),
+    onErrorFns: new Map()
   }
 
   private _predicateFns: Set<PredicateFn<TIdentifier>> = new Set()
@@ -60,8 +60,8 @@ export class AsyncProcess<TIdentifier extends string> {
   /**
    * Save the async process function(s).
    */
-  do(asyncFns: AsyncFns): this {
-    this._fns.asyncFns = new Set(ensureArray(asyncFns))
+  do(asyncFns: AsyncFns, identifier = 'do'): this {
+    this._fns.asyncFns.set(identifier, new Set(ensureArray(asyncFns)))
     return this
   }
 
@@ -76,33 +76,24 @@ export class AsyncProcess<TIdentifier extends string> {
   /**
    * Save functions to execute before starting the async process.
    */
-  onStart(asyncFns: AsyncFns): this {
-    new Set(ensureArray(asyncFns)).forEach(fn => {
-      this._fns.onStartFns.add(fn)
-    })
-
+  onStart(asyncFns: AsyncFns, identifier = 'onStart'): this {
+    this._fns.onStartFns.set(identifier, new Set(ensureArray(asyncFns)))
     return this
   }
 
   /**
    * Save functions to execute after the async process if succeeded.
    */
-  onSuccess(asyncFns: AsyncFns): this {
-    new Set(ensureArray(asyncFns)).forEach(fn => {
-      this._fns.onSuccessFns.add(fn)
-    })
-
+  onSuccess(asyncFns: AsyncFns, identifier = 'onSuccess'): this {
+    this._fns.onSuccessFns.set(identifier, new Set(ensureArray(asyncFns)))
     return this
   }
 
   /**
    * Save functions to execute after the async process if failed.
    */
-  onError(asyncFns: AsyncErrorFns): this {
-    new Set(ensureArray(asyncFns)).forEach(fn => {
-      this._fns.onErrorFns.add(fn)
-    })
-
+  onError(asyncFns: AsyncErrorFns, identifier = 'onError'): this {
+    this._fns.onErrorFns.set(identifier, new Set(ensureArray(asyncFns)))
     return this
   }
 
@@ -114,19 +105,22 @@ export class AsyncProcess<TIdentifier extends string> {
       asyncProcess: AsyncProcess<TIdentifier>
     ) => AsyncProcess<TIdentifier>
   ): this {
-    const fnTypes: Array<keyof IAsyncProcessFns> = [
-      'asyncFns',
-      'onStartFns',
-      'onSuccessFns',
-      'onErrorFns'
-    ]
-
     const asyncProcessFns = asyncProcessComposer(this).fns
 
-    fnTypes.forEach(fnType => {
-      asyncProcessFns[fnType].forEach(fn => {
-        this._fns[fnType].add(fn as AsyncFn)
-      })
+    asyncProcessFns.asyncFns.forEach((fns, identifier) => {
+      this._fns.asyncFns.set(identifier, fns)
+    })
+
+    asyncProcessFns.onStartFns.forEach((fns, identifier) => {
+      this._fns.onStartFns.set(identifier, fns)
+    })
+
+    asyncProcessFns.onSuccessFns.forEach((fns, identifier) => {
+      this._fns.onSuccessFns.set(identifier, fns)
+    })
+
+    asyncProcessFns.onErrorFns.forEach((fns, identifier) => {
+      this._fns.onErrorFns.set(identifier, fns)
     })
 
     return this
@@ -200,8 +194,12 @@ export class AsyncProcess<TIdentifier extends string> {
   /**
    * Execute sequentially async functions.
    */
-  private _execAsyncFns(asyncFns: Set<AsyncFn>): Promise<this> {
+  private _execAsyncFns(asyncFns: Map<string, Set<AsyncFn>>): Promise<this> {
     return Array.from(asyncFns.values())
+      .reduce<AsyncFn[]>(
+        (acc, fns_) => acc.concat(Array.from(fns_.values())),
+        []
+      )
       .reduce(
         (promise, nextFn) => promise.then(() => nextFn()),
         Promise.resolve(null)
@@ -214,9 +212,13 @@ export class AsyncProcess<TIdentifier extends string> {
    */
   private _execAsyncErrorFns(
     err: Error,
-    asyncErrorFns: Set<AsyncErrorFn>
+    asyncErrorFns: Map<string, Set<AsyncErrorFn>>
   ): Promise<this> {
     return Array.from(asyncErrorFns.values())
+      .reduce<AsyncErrorFn[]>(
+        (acc, fns_) => acc.concat(Array.from(fns_.values())),
+        []
+      )
       .reduce(
         (promise, nextFn) => promise.then(() => nextFn(err)),
         Promise.resolve(null)
