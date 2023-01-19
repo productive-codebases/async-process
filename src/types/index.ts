@@ -26,3 +26,7 @@ export type AsyncProcessIdentifiers<TIdentifier extends string> = [
   TIdentifier,
   Maybe<string>
 ]
+
+export interface IAsyncProcessOptions {
+  deleteFunctionsWhenStarted: boolean
+}

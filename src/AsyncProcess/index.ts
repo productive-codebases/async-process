@@ -6,6 +6,7 @@ import {
   AsyncFns,
   AsyncProcessIdentifiers,
   IAsyncProcessFns,
+  IAsyncProcessOptions,
   PredicateFn
 } from '../types'
 
@@ -18,6 +19,14 @@ export class AsyncProcess<TIdentifier extends string> {
   public metadata = new MetaData()
 
   private _identifiers: AsyncProcessIdentifiers<TIdentifier>
+
+  private _options: IAsyncProcessOptions = {
+    /**
+     * When set to true, registered functions are deleted after AsyncProcess has been started.
+     * Useful when reusing a same instance of AsyncProcess to not have functions registered several times.
+     */
+    deleteFunctionsWhenStarted: false
+  }
 
   private _error: Maybe<Error> = null
 
@@ -55,6 +64,14 @@ export class AsyncProcess<TIdentifier extends string> {
       identifier,
       subIdentifiers
     )
+  }
+
+  /**
+   * Set AsyncProcess options.
+   */
+  setOptions(options: IAsyncProcessOptions): this {
+    this._options = options
+    return this
   }
 
   /**
@@ -149,12 +166,17 @@ export class AsyncProcess<TIdentifier extends string> {
     try {
       if (this._predicateFns && !(await this.shouldStart())) {
         await this._execAsyncFns(this._fns.onSuccessFns)
+
+        this.shouldResetFunctions()
+
         return this
       }
 
       await this._execAsyncFns(this._fns.onStartFns)
       await this._execAsyncFns(this._fns.asyncFns)
       await this._execAsyncFns(this._fns.onSuccessFns)
+
+      this.shouldResetFunctions()
     } catch (err) {
       this._error = err instanceof Error ? err : new Error('Unknown error')
       this._execAsyncErrorFns(this._error, this._fns.onErrorFns)
@@ -173,6 +195,24 @@ export class AsyncProcess<TIdentifier extends string> {
       }
     }
     return true
+  }
+
+  /**
+   * Reset functions.
+   */
+  shouldResetFunctions(): this {
+    if (!this._options.deleteFunctionsWhenStarted) {
+      return this
+    }
+
+    this._fns = {
+      asyncFns: new Map(),
+      onStartFns: new Map(),
+      onSuccessFns: new Map(),
+      onErrorFns: new Map()
+    }
+
+    return this
   }
 
   /**
