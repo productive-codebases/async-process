@@ -6,10 +6,10 @@ export type AsyncFn<R> = () => Promise<R>
 export type FnOrAsyncFn<R> = Fn<R> | AsyncFn<R>
 export type Jobs<R> = FnOrAsyncFn<R> | Array<FnOrAsyncFn<R>>
 
-export type ErrorFn = (err: unknown) => any
-export type AsyncErrorFn = (err: unknown) => Promise<any>
-export type FnOrAsyncErrorFn = ErrorFn | AsyncErrorFn
-export type AsyncErrorFns = FnOrAsyncErrorFn | Array<FnOrAsyncErrorFn>
+export type ErrorFn<E> = (err: E) => any
+export type AsyncErrorFn<E> = (err: E) => Promise<any>
+export type FnOrAsyncErrorFn<E> = ErrorFn<E> | AsyncErrorFn<E>
+export type AsyncErrorFns<E> = FnOrAsyncErrorFn<E> | Array<FnOrAsyncErrorFn<E>>
 
 export type PredicateFn<TIdentifier extends string> = (
   asyncProcess: AsyncProcess<TIdentifier>
@@ -19,11 +19,11 @@ export type PredicateFns<TIdentifier extends string> =
   | PredicateFn<TIdentifier>
   | Array<PredicateFn<TIdentifier>>
 
-export interface IAsyncProcessFns<R> {
+export interface IAsyncProcessFns<R, E> {
   jobs: Map<string, Set<FnOrAsyncFn<R>>>
   onStartFns: Map<string, Set<FnOrAsyncFn<R>>>
   onSuccessFns: Map<string, Set<FnOrAsyncFn<R>>>
-  onErrorFns: Map<string, Set<FnOrAsyncErrorFn>>
+  onErrorFns: Map<string, Set<FnOrAsyncErrorFn<E>>>
   predicateFns: Map<string, Set<PredicateFn<any>>>
 }
 

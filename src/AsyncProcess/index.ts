@@ -22,7 +22,7 @@ import {
  * and executes functions according to the successes / errors.
  */
 
-export class AsyncProcess<TIdentifier extends string, R = any> {
+export class AsyncProcess<TIdentifier extends string, R = any, E = any> {
   public metadata = new MetaData()
 
   private _identifiers: AsyncProcessIdentifiers<TIdentifier>
@@ -39,10 +39,10 @@ export class AsyncProcess<TIdentifier extends string, R = any> {
     }
   }
 
-  private _error: Maybe<unknown> = null
+  private _error: Maybe<E> = null
   private _result: Maybe<R> = null
 
-  private _fns: IAsyncProcessFns<R> = {
+  private _fns: IAsyncProcessFns<R, E> = {
     jobs: new Map(),
     onStartFns: new Map(),
     onSuccessFns: new Map(),
@@ -135,7 +135,7 @@ export class AsyncProcess<TIdentifier extends string, R = any> {
   /**
    * Save functions to execute after jobs are succesful.
    */
-  onError(jobs: AsyncErrorFns, identifier = 'defaultOnError'): this {
+  onError(jobs: AsyncErrorFns<E>, identifier = 'defaultOnError'): this {
     this._log('functionsRegistrations')('debug')(
       `Register "${identifier}" onError function(s)`
     )
@@ -209,10 +209,10 @@ export class AsyncProcess<TIdentifier extends string, R = any> {
         await this._execJobs(this._fns.onSuccessFns)
       }
     } catch (err) {
-      this._error = err
+      this._error = err as E
       this._result = null
 
-      this._execAsyncErrorFns(err, this._fns.onErrorFns)
+      this._execAsyncErrorFns(this._error, this._fns.onErrorFns)
     } finally {
       this.shouldDeleteFunctions()
     }
@@ -266,11 +266,11 @@ export class AsyncProcess<TIdentifier extends string, R = any> {
    * Getters
    */
 
-  get fns(): IAsyncProcessFns<R> {
+  get fns(): IAsyncProcessFns<R, E> {
     return this._fns
   }
 
-  get error(): Maybe<unknown> {
+  get error(): Maybe<E> {
     return this._error
   }
 
@@ -307,8 +307,8 @@ export class AsyncProcess<TIdentifier extends string, R = any> {
    * Execute sequentially async error functions.
    */
   private async _execAsyncErrorFns(
-    err: unknown,
-    asyncErrorFns: Map<string, Set<FnOrAsyncErrorFn>>
+    err: E,
+    asyncErrorFns: Map<string, Set<FnOrAsyncErrorFn<E>>>
   ): Promise<this> {
     for (const [identifier, fns] of asyncErrorFns.entries()) {
       for (const fn of fns) {
@@ -336,10 +336,10 @@ export class AsyncProcess<TIdentifier extends string, R = any> {
    * Static
    */
 
-  static instance<TIdentifier extends string>(
+  static instance<TIdentifier extends string, R = any, E = any>(
     identifier: TIdentifier,
     subIdentifiers?: Maybe<string[]>
-  ): AsyncProcess<TIdentifier> {
+  ): AsyncProcess<TIdentifier, R, E> {
     const identifiersAsString = AsyncProcess.computeIdentifiers(
       identifier,
       subIdentifiers ?? null
@@ -351,10 +351,14 @@ export class AsyncProcess<TIdentifier extends string, R = any> {
       return instance
     }
 
-    const asyncProcess = new AsyncProcess(identifier, subIdentifiers)
+    const asyncProcess = new AsyncProcess<TIdentifier, R, E>(
+      identifier,
+      subIdentifiers
+    )
+
     AsyncProcess._instances.set(identifiersAsString, asyncProcess)
 
-    return asyncProcess as AsyncProcess<TIdentifier>
+    return asyncProcess
   }
 
   /**

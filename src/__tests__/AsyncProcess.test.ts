@@ -16,10 +16,10 @@ describe('AsyncProcess', () => {
       }
     }
   ])('With options: %o', options => {
-    function getAsyncProcessTestInstance<R>(
+    function getAsyncProcessTestInstance<R = any, E = any>(
       identifier: AsyncProcessTestIdentifier,
       subIdentifiers?: string[]
-    ): AsyncProcess<AsyncProcessTestIdentifier, R> {
+    ): AsyncProcess<AsyncProcessTestIdentifier, R, E> {
       return AsyncProcess.instance(identifier, subIdentifiers).setOptions(
         options
       )
@@ -192,8 +192,10 @@ describe('AsyncProcess', () => {
           .mockImplementation(() =>
             Promise.reject(new CustomError('Something bad happened'))
           )
-        const asyncProcess =
-          getAsyncProcessTestInstance('loadFoo').do(fetchData)
+
+        const asyncProcess = getAsyncProcessTestInstance<unknown, CustomError>(
+          'loadFoo'
+        ).do(fetchData)
 
         await asyncProcess.start()
 
