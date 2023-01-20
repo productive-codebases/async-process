@@ -34,7 +34,7 @@ export class AsyncProcess<TIdentifier extends string> {
     }
   }
 
-  private _error: Maybe<Error> = null
+  private _error: Maybe<unknown> = null
 
   private _fns: IAsyncProcessFns = {
     jobs: new Map(),
@@ -203,8 +203,8 @@ export class AsyncProcess<TIdentifier extends string> {
         await this._execJobs(this._fns.onSuccessFns)
       }
     } catch (err) {
-      this._error = err instanceof Error ? err : new Error('Unknown error')
-      this._execAsyncErrorFns(this._error, this._fns.onErrorFns)
+      this._error = err
+      this._execAsyncErrorFns(err, this._fns.onErrorFns)
     } finally {
       this.shouldDeleteFunctions()
     }
@@ -262,7 +262,7 @@ export class AsyncProcess<TIdentifier extends string> {
     return this._fns
   }
 
-  get error(): Maybe<Error> {
+  get error(): Maybe<unknown> {
     return this._error
   }
 
@@ -291,7 +291,7 @@ export class AsyncProcess<TIdentifier extends string> {
    * Execute sequentially async error functions.
    */
   private async _execAsyncErrorFns(
-    err: Error,
+    err: unknown,
     asyncErrorFns: Map<string, Set<AsyncErrorFn>>
   ): Promise<this> {
     for (const [identifier, fns] of asyncErrorFns.entries()) {

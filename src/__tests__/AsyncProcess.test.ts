@@ -185,11 +185,15 @@ describe('AsyncProcess', () => {
         expect(onErrorFn).toHaveBeenCalledWith(error)
       })
 
-      it('should expose the Error', async () => {
+      it('should expose the Error object as it', async () => {
+        class CustomError {
+          constructor(readonly error: string) {}
+        }
+
         const fetchData = (): Promise<any> => {
           return new Promise((_, reject) => {
             setTimeout(() => {
-              reject(new Error('Something bad happened'))
+              reject(new CustomError('Something bad happened'))
             }, 50)
           })
         }
@@ -200,8 +204,10 @@ describe('AsyncProcess', () => {
         await asyncProcess.start()
 
         expect(data).toEqual(null)
-        expect(asyncProcess.error).toBeInstanceOf(Error)
-        expect(asyncProcess.error?.message).toEqual('Something bad happened')
+        expect(asyncProcess.error).toBeInstanceOf(CustomError)
+        expect(asyncProcess.error).toEqual(
+          new CustomError('Something bad happened')
+        )
       })
 
       it('should return a success promise even if an error occurred', async () => {
