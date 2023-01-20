@@ -522,24 +522,75 @@ describe('AsyncProcess', () => {
 
     describe('Options', () => {
       describe('deleteFunctionsWhenJobsStarted', () => {
-        it('should reset functions when async process is started', async () => {
+        it('should reset functions when async process is successful', async () => {
+          const fetchData = jest.fn()
           const successSpy1 = jest.fn()
           const successSpy2 = jest.fn()
           const successSpy3 = jest.fn()
+          const errorSpy1 = jest.fn()
 
-          const foo1 = getAsyncProcessTestInstance('loadFoo')
+          const foo1 = getAsyncProcessTestInstance('loadFoo').do(fetchData)
 
-          foo1.onSuccess(successSpy1, 'success1')
-          foo1.onSuccess(successSpy2, 'success2')
+          foo1
+            .onSuccess(successSpy1, 'success1')
+            .onSuccess(successSpy2, 'success2')
+            .onError(errorSpy1, 'error1')
 
           expect(foo1.fns.onSuccessFns.size).toBe(2)
+          expect(foo1.fns.onErrorFns.size).toBe(1)
 
           await foo1.start()
 
-          foo1.onSuccess(successSpy3, 'success3')
+          foo1
+            .onSuccess(successSpy3, 'success3')
+            .onError(errorSpy1, 'error1bis')
 
           expect(foo1.fns.onSuccessFns.size).toBe(
+            // if deleteFunctionsWhenJobsStarted, fns have been removed after the start,
+            // so we get only `success3`
             options.deleteFunctionsWhenJobsStarted ? 1 : 3
+          )
+
+          expect(foo1.fns.onErrorFns.size).toBe(
+            // if deleteFunctionsWhenJobsStarted, fns have been removed after the start,
+            // so we get only `error1bis`
+            options.deleteFunctionsWhenJobsStarted ? 1 : 2
+          )
+        })
+
+        it('should reset functions when async process has failed', async () => {
+          const fetchData = jest.fn().mockImplementation(() => Promise.reject())
+          const successSpy1 = jest.fn()
+          const successSpy2 = jest.fn()
+          const successSpy3 = jest.fn()
+          const errorSpy1 = jest.fn()
+
+          const foo1 = getAsyncProcessTestInstance('loadFoo').do(fetchData)
+
+          foo1
+            .onSuccess(successSpy1, 'success1')
+            .onSuccess(successSpy2, 'success2')
+            .onError(errorSpy1, 'error1')
+
+          expect(foo1.fns.onSuccessFns.size).toBe(2)
+          expect(foo1.fns.onErrorFns.size).toBe(1)
+
+          await foo1.start()
+
+          foo1
+            .onSuccess(successSpy3, 'success3')
+            .onError(errorSpy1, 'error1bis')
+
+          expect(foo1.fns.onSuccessFns.size).toBe(
+            // if deleteFunctionsWhenJobsStarted, fns have been removed after the start,
+            // so we get only `success3`
+            options.deleteFunctionsWhenJobsStarted ? 1 : 3
+          )
+
+          expect(foo1.fns.onErrorFns.size).toBe(
+            // if deleteFunctionsWhenJobsStarted, fns have been removed after the start,
+            // so we get only `error1bis`
+            options.deleteFunctionsWhenJobsStarted ? 1 : 2
           )
         })
       })

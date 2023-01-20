@@ -197,20 +197,16 @@ export class AsyncProcess<TIdentifier extends string> {
     try {
       if (this._fns.predicateFns.size && !(await this.shouldStart())) {
         await this._execJobs(this._fns.onSuccessFns)
-
-        this.shouldDeleteFunctions()
-
-        return this
+      } else {
+        await this._execJobs(this._fns.onStartFns)
+        await this._execJobs(this._fns.jobs)
+        await this._execJobs(this._fns.onSuccessFns)
       }
-
-      await this._execJobs(this._fns.onStartFns)
-      await this._execJobs(this._fns.jobs)
-      await this._execJobs(this._fns.onSuccessFns)
-
-      this.shouldDeleteFunctions()
     } catch (err) {
       this._error = err instanceof Error ? err : new Error('Unknown error')
       this._execAsyncErrorFns(this._error, this._fns.onErrorFns)
+    } finally {
+      this.shouldDeleteFunctions()
     }
 
     return this
