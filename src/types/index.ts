@@ -4,7 +4,7 @@ import { AsyncProcess } from '../AsyncProcess'
 export type Fn = () => any
 export type AsyncFn = () => Promise<any>
 export type FnOrAsyncFn = Fn | AsyncFn
-export type AsyncFns = FnOrAsyncFn | Array<FnOrAsyncFn>
+export type Jobs = FnOrAsyncFn | Array<FnOrAsyncFn>
 
 export type ErrorFn = (err: Error) => any
 export type AsyncErrorFn = (err: Error) => Promise<any>
@@ -16,7 +16,7 @@ export type PredicateFn<TIdentifier extends string> = (
 ) => boolean | Promise<boolean>
 
 export interface IAsyncProcessFns {
-  asyncFns: Map<string, Set<AsyncFn>>
+  jobs: Map<string, Set<AsyncFn>>
   onStartFns: Map<string, Set<AsyncFn>>
   onSuccessFns: Map<string, Set<AsyncFn>>
   onErrorFns: Map<string, Set<AsyncErrorFn>>
@@ -28,5 +28,6 @@ export type AsyncProcessIdentifiers<TIdentifier extends string> = [
 ]
 
 export interface IAsyncProcessOptions {
+  // delete registered functions when async process is started
   deleteFunctionsWhenStarted: boolean
 }

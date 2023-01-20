@@ -61,7 +61,7 @@ AsyncProcess.instance('initUsersPage', ['optionalIdentifier'])
   .onSuccess(hideSpinner)
   // call the `showError` function when the process is done and if it fails
   .onError(showError)
-  // start the async process
+  // start jobs
   .start()
 ```
 

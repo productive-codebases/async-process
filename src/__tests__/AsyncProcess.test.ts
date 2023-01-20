@@ -13,7 +13,7 @@ describe('AsyncProcess', () => {
   describe.each<IAsyncProcessOptions>([
     { deleteFunctionsWhenStarted: false },
     { deleteFunctionsWhenStarted: true }
-  ])('According to options: %o', ({ deleteFunctionsWhenStarted }) => {
+  ])('With options: %o', ({ deleteFunctionsWhenStarted }) => {
     let data: Maybe<IData> = null
 
     const setData = (data_: any) => {
@@ -303,7 +303,7 @@ describe('AsyncProcess', () => {
     })
 
     describe('Predicates', () => {
-      it('should execute the async process if the predicate function is true', async () => {
+      it('should execute jobs if the predicate function is true', async () => {
         const fetchData = jest.fn()
         const predicateFn1 = jest.fn().mockImplementation(() => true)
         const predicateFn2 = jest.fn().mockImplementation(() => true)
@@ -329,7 +329,7 @@ describe('AsyncProcess', () => {
         expect(onErrorFn).not.toHaveBeenCalled()
       })
 
-      it('should not execute the async process if the predicate function is false', async () => {
+      it('should not execute jobs if the predicate function is false', async () => {
         const fetchData = jest.fn()
         const predicateFn1 = jest.fn().mockImplementation(() => false)
         const onStartFn = jest.fn()
@@ -352,7 +352,7 @@ describe('AsyncProcess', () => {
         expect(onErrorFn).not.toHaveBeenCalled()
       })
 
-      it('should not execute the async process if one of the predicate functions is false', async () => {
+      it('should not execute jobs if one of the predicate functions is false', async () => {
         const fetchData = jest.fn()
         const predicateFn1 = jest.fn().mockImplementation(() => true)
         const predicateFn2 = jest.fn().mockImplementation(() => true)

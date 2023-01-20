@@ -3,7 +3,7 @@ import {
   AsyncErrorFn,
   AsyncErrorFns,
   AsyncFn,
-  AsyncFns,
+  Jobs,
   AsyncProcessIdentifiers,
   IAsyncProcessFns,
   IAsyncProcessOptions,
@@ -31,7 +31,7 @@ export class AsyncProcess<TIdentifier extends string> {
   private _error: Maybe<Error> = null
 
   private _fns: IAsyncProcessFns = {
-    asyncFns: new Map(),
+    jobs: new Map(),
     onStartFns: new Map(),
     onSuccessFns: new Map(),
     onErrorFns: new Map()
@@ -75,10 +75,10 @@ export class AsyncProcess<TIdentifier extends string> {
   }
 
   /**
-   * Save the async process function(s).
+   * Save jobs function(s).
    */
-  do(asyncFns: AsyncFns, identifier = 'do'): this {
-    this._fns.asyncFns.set(identifier, new Set(ensureArray(asyncFns)))
+  do(jobs: Jobs, identifier = 'do'): this {
+    this._fns.jobs.set(identifier, new Set(ensureArray(jobs)))
     return this
   }
 
@@ -91,26 +91,26 @@ export class AsyncProcess<TIdentifier extends string> {
   }
 
   /**
-   * Save functions to execute before starting the async process.
+   * Save functions to execute before starting jobs.
    */
-  onStart(asyncFns: AsyncFns, identifier = 'onStart'): this {
-    this._fns.onStartFns.set(identifier, new Set(ensureArray(asyncFns)))
+  onStart(jobs: Jobs, identifier = 'onStart'): this {
+    this._fns.onStartFns.set(identifier, new Set(ensureArray(jobs)))
     return this
   }
 
   /**
-   * Save functions to execute after the async process if succeeded.
+   * Save functions to execute after jobs are succesful.
    */
-  onSuccess(asyncFns: AsyncFns, identifier = 'onSuccess'): this {
-    this._fns.onSuccessFns.set(identifier, new Set(ensureArray(asyncFns)))
+  onSuccess(jobs: Jobs, identifier = 'onSuccess'): this {
+    this._fns.onSuccessFns.set(identifier, new Set(ensureArray(jobs)))
     return this
   }
 
   /**
-   * Save functions to execute after the async process if failed.
+   * Save functions to execute after jobs are succesful.
    */
-  onError(asyncFns: AsyncErrorFns, identifier = 'onError'): this {
-    this._fns.onErrorFns.set(identifier, new Set(ensureArray(asyncFns)))
+  onError(jobs: AsyncErrorFns, identifier = 'onError'): this {
+    this._fns.onErrorFns.set(identifier, new Set(ensureArray(jobs)))
     return this
   }
 
@@ -124,8 +124,8 @@ export class AsyncProcess<TIdentifier extends string> {
   ): this {
     const asyncProcessFns = asyncProcessComposer(this).fns
 
-    asyncProcessFns.asyncFns.forEach((fns, identifier) => {
-      this._fns.asyncFns.set(identifier, fns)
+    asyncProcessFns.jobs.forEach((fns, identifier) => {
+      this._fns.jobs.set(identifier, fns)
     })
 
     asyncProcessFns.onStartFns.forEach((fns, identifier) => {
@@ -158,23 +158,23 @@ export class AsyncProcess<TIdentifier extends string> {
   }
 
   /**
-   * Start the async process and executes registered functions.
+   * Start jobs and executes registered functions.
    */
   async start(): Promise<this> {
     this._error = null
 
     try {
       if (this._predicateFns && !(await this.shouldStart())) {
-        await this._execAsyncFns(this._fns.onSuccessFns)
+        await this._execJobs(this._fns.onSuccessFns)
 
         this.shouldResetFunctions()
 
         return this
       }
 
-      await this._execAsyncFns(this._fns.onStartFns)
-      await this._execAsyncFns(this._fns.asyncFns)
-      await this._execAsyncFns(this._fns.onSuccessFns)
+      await this._execJobs(this._fns.onStartFns)
+      await this._execJobs(this._fns.jobs)
+      await this._execJobs(this._fns.onSuccessFns)
 
       this.shouldResetFunctions()
     } catch (err) {
@@ -206,7 +206,7 @@ export class AsyncProcess<TIdentifier extends string> {
     }
 
     this._fns = {
-      asyncFns: new Map(),
+      jobs: new Map(),
       onStartFns: new Map(),
       onSuccessFns: new Map(),
       onErrorFns: new Map()
@@ -234,8 +234,8 @@ export class AsyncProcess<TIdentifier extends string> {
   /**
    * Execute sequentially async functions.
    */
-  private _execAsyncFns(asyncFns: Map<string, Set<AsyncFn>>): Promise<this> {
-    return Array.from(asyncFns.values())
+  private _execJobs(jobs: Map<string, Set<AsyncFn>>): Promise<this> {
+    return Array.from(jobs.values())
       .reduce<AsyncFn[]>(
         (acc, fns_) => acc.concat(Array.from(fns_.values())),
         []
