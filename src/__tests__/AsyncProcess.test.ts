@@ -1,6 +1,6 @@
 import { Maybe } from '@productive-codebases/toolbox'
 import { AsyncProcess } from '../AsyncProcess'
-import { debug, logger } from '../logger'
+import { debug } from '../logger'
 import { IAsyncProcessOptions } from '../types'
 
 interface IData {
@@ -317,14 +317,17 @@ describe('AsyncProcess', () => {
         const fetchData = jest.fn()
         const predicateFn1 = jest.fn().mockImplementation(() => true)
         const predicateFn2 = jest.fn().mockImplementation(() => true)
+        const predicateFn3 = jest.fn().mockImplementation(() => true)
+        const predicateFn4 = jest.fn().mockImplementation(() => true)
         const onStartFn = jest.fn()
         const onSuccessFn = jest.fn()
         const onErrorFn = jest.fn()
 
         const asyncProcess = getAsyncProcessTestInstance('loadFoo')
           .do(fetchData)
-          .if(predicateFn1)
-          .if(predicateFn2)
+          .if(predicateFn1, 'predicate1')
+          .if(predicateFn2, 'predicate2')
+          .if([predicateFn3, predicateFn4], 'predicate3and4')
           .onStart(onStartFn)
           .onSuccess(onSuccessFn)
           .onError(onErrorFn)
@@ -333,6 +336,8 @@ describe('AsyncProcess', () => {
 
         expect(predicateFn1).toHaveBeenCalled()
         expect(predicateFn2).toHaveBeenCalled()
+        expect(predicateFn3).toHaveBeenCalled()
+        expect(predicateFn4).toHaveBeenCalled()
         expect(fetchData).toHaveBeenCalled()
         expect(onStartFn).toHaveBeenCalled()
         expect(onSuccessFn).toHaveBeenCalled()
@@ -367,15 +372,16 @@ describe('AsyncProcess', () => {
         const predicateFn1 = jest.fn().mockImplementation(() => true)
         const predicateFn2 = jest.fn().mockImplementation(() => true)
         const predicateFn3 = jest.fn().mockImplementation(() => false)
+        const predicateFn4 = jest.fn().mockImplementation(() => true)
         const onStartFn = jest.fn()
         const onSuccessFn = jest.fn()
         const onErrorFn = jest.fn()
 
         const asyncProcess = getAsyncProcessTestInstance('loadFoo')
           .do(fetchData)
-          .if(predicateFn1)
-          .if(predicateFn2)
-          .if(predicateFn3)
+          .if(predicateFn1, 'predicate1')
+          .if(predicateFn2, 'predicate2')
+          .if([predicateFn3, predicateFn4], 'predicate3and4')
           .onStart(onStartFn)
           .onSuccess(onSuccessFn)
           .onError(onErrorFn)
@@ -385,6 +391,8 @@ describe('AsyncProcess', () => {
         expect(predicateFn1).toHaveBeenCalled()
         expect(predicateFn2).toHaveBeenCalled()
         expect(predicateFn3).toHaveBeenCalled()
+        // not called because predicateFn3 is falsy
+        expect(predicateFn4).not.toHaveBeenCalled()
         expect(fetchData).not.toHaveBeenCalled()
         expect(onStartFn).not.toHaveBeenCalled()
         expect(onSuccessFn).toHaveBeenCalled()
@@ -590,7 +598,7 @@ describe('AsyncProcess', () => {
           const onSuccessFn = jest.fn()
           const onErrorFn = jest.fn()
 
-          await getAsyncProcessTestInstance('loadFoo')
+          const asyncProcess = getAsyncProcessTestInstance('loadFoo')
             .setOptions({
               debug: {
                 logFunctionRegistrations: true,
@@ -602,7 +610,8 @@ describe('AsyncProcess', () => {
             .onStart(onStartFn)
             .onSuccess(onSuccessFn)
             .onError(onErrorFn)
-            .start()
+
+          await asyncProcess.start()
 
           expect(logs).toMatchSnapshot()
         })

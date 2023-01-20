@@ -9,7 +9,7 @@ import {
   IAsyncProcessFns,
   IAsyncProcessOptions,
   Jobs,
-  PredicateFn
+  PredicateFns
 } from '../types'
 
 /**
@@ -40,10 +40,9 @@ export class AsyncProcess<TIdentifier extends string> {
     jobs: new Map(),
     onStartFns: new Map(),
     onSuccessFns: new Map(),
-    onErrorFns: new Map()
+    onErrorFns: new Map(),
+    predicateFns: new Map()
   }
-
-  private _predicateFns: Set<PredicateFn<TIdentifier>> = new Set()
 
   /**
    * Static
@@ -85,7 +84,7 @@ export class AsyncProcess<TIdentifier extends string> {
    */
   do(jobs: Jobs, identifier = 'defaultJobs'): this {
     this._log('functionsRegistrations')('debug')(
-      `Register jobs function(s) with the identifier "${identifier}"`
+      `Register "${identifier}" jobs function(s)`
     )
 
     this._fns.jobs.set(identifier, new Set(ensureArray(jobs)))
@@ -95,8 +94,11 @@ export class AsyncProcess<TIdentifier extends string> {
   /**
    * Save a predicate function to trigger or not the process.
    */
-  if(predicateFn: PredicateFn<TIdentifier>): this {
-    this._predicateFns.add(predicateFn)
+  if(
+    predicateFns: PredicateFns<TIdentifier>,
+    identifier = 'defaultPredicate'
+  ): this {
+    this._fns.predicateFns.set(identifier, new Set(ensureArray(predicateFns)))
     return this
   }
 
@@ -105,7 +107,7 @@ export class AsyncProcess<TIdentifier extends string> {
    */
   onStart(jobs: Jobs, identifier = 'defaultOnStart'): this {
     this._log('functionsRegistrations')('debug')(
-      `Register onStart function(s) with the identifier "${identifier}"`
+      `Register "${identifier}" onStart function(s)`
     )
 
     this._fns.onStartFns.set(identifier, new Set(ensureArray(jobs)))
@@ -117,7 +119,7 @@ export class AsyncProcess<TIdentifier extends string> {
    */
   onSuccess(jobs: Jobs, identifier = 'defaultOnSuccess'): this {
     this._log('functionsRegistrations')('debug')(
-      `Register onSuccess function(s) with the identifier "${identifier}"`
+      `Register "${identifier}" onSuccess function(s)`
     )
 
     this._fns.onSuccessFns.set(identifier, new Set(ensureArray(jobs)))
@@ -129,7 +131,7 @@ export class AsyncProcess<TIdentifier extends string> {
    */
   onError(jobs: AsyncErrorFns, identifier = 'defaultOnError'): this {
     this._log('functionsRegistrations')('debug')(
-      `Register onError function(s) with the identifier "${identifier}"`
+      `Register "${identifier}" onError function(s)`
     )
 
     this._fns.onErrorFns.set(identifier, new Set(ensureArray(jobs)))
@@ -193,7 +195,7 @@ export class AsyncProcess<TIdentifier extends string> {
     this._error = null
 
     try {
-      if (this._predicateFns && !(await this.shouldStart())) {
+      if (this._fns.predicateFns.size && !(await this.shouldStart())) {
         await this._execJobs(this._fns.onSuccessFns)
 
         this.shouldDeleteFunctions()
@@ -218,15 +220,18 @@ export class AsyncProcess<TIdentifier extends string> {
    * Return a boolean according to registered predicates values.
    */
   async shouldStart(): Promise<boolean> {
-    for (const predicateFn of this._predicateFns) {
-      if (!(await predicateFn(this))) {
-        this._log('functionsExecutions')('debug')(
-          `Skip jobs execution because predicate is falsy`
-        )
+    for (const [identifier, predicateFns] of this._fns.predicateFns.entries()) {
+      for (const predicateFn of predicateFns) {
+        if (!(await predicateFn(this))) {
+          this._log('functionsExecutions')('debug')(
+            `Skip jobs execution because of the "${identifier}" predicate`
+          )
 
-        return false
+          return false
+        }
       }
     }
+
     return true
   }
 
@@ -246,7 +251,8 @@ export class AsyncProcess<TIdentifier extends string> {
       jobs: new Map(),
       onStartFns: new Map(),
       onSuccessFns: new Map(),
-      onErrorFns: new Map()
+      onErrorFns: new Map(),
+      predicateFns: new Map()
     }
 
     return this
@@ -275,7 +281,7 @@ export class AsyncProcess<TIdentifier extends string> {
     for (const [identifier, fns] of jobs.entries()) {
       for (const fn of fns) {
         this._log('functionsExecutions')('debug')(
-          `Execute jobs functions with the identifier "${identifier}"`
+          `Execute "${identifier}" jobs function(s)`
         )
 
         await fn()
@@ -295,7 +301,7 @@ export class AsyncProcess<TIdentifier extends string> {
     for (const [identifier, fns] of asyncErrorFns.entries()) {
       for (const fn of fns) {
         this._log('functionsExecutions')('debug')(
-          `Execute onError functions with the identifier "${identifier}"`
+          `Execute "${identifier}" onError function(s)`
         )
 
         await fn(err)

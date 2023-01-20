@@ -15,11 +15,16 @@ export type PredicateFn<TIdentifier extends string> = (
   asyncProcess: AsyncProcess<TIdentifier>
 ) => boolean | Promise<boolean>
 
+export type PredicateFns<TIdentifier extends string> =
+  | PredicateFn<TIdentifier>
+  | Array<PredicateFn<TIdentifier>>
+
 export interface IAsyncProcessFns {
   jobs: Map<string, Set<AsyncFn>>
   onStartFns: Map<string, Set<AsyncFn>>
   onSuccessFns: Map<string, Set<AsyncFn>>
   onErrorFns: Map<string, Set<AsyncErrorFn>>
+  predicateFns: Map<string, Set<PredicateFn<any>>>
 }
 
 export type AsyncProcessIdentifiers<TIdentifier extends string> = [
