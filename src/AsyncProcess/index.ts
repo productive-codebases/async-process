@@ -35,6 +35,7 @@ export class AsyncProcess<TIdentifier extends string> {
   }
 
   private _error: Maybe<unknown> = null
+  private _result: Maybe<unknown> = null
 
   private _fns: IAsyncProcessFns = {
     jobs: new Map(),
@@ -196,14 +197,16 @@ export class AsyncProcess<TIdentifier extends string> {
 
     try {
       if (this._fns.predicateFns.size && !(await this.shouldStart())) {
-        await this._execJobs(this._fns.onSuccessFns)
+        this._result = await this._execJobs(this._fns.onSuccessFns)
       } else {
         await this._execJobs(this._fns.onStartFns)
-        await this._execJobs(this._fns.jobs)
+        this._result = await this._execJobs(this._fns.jobs)
         await this._execJobs(this._fns.onSuccessFns)
       }
     } catch (err) {
       this._error = err
+      this._result = null
+
       this._execAsyncErrorFns(err, this._fns.onErrorFns)
     } finally {
       this.shouldDeleteFunctions()
@@ -266,6 +269,10 @@ export class AsyncProcess<TIdentifier extends string> {
     return this._error
   }
 
+  get result(): Maybe<unknown> {
+    return this._result
+  }
+
   /**
    * Private
    */
@@ -273,18 +280,20 @@ export class AsyncProcess<TIdentifier extends string> {
   /**
    * Execute sequentially async functions.
    */
-  private async _execJobs(jobs: Map<string, Set<AsyncFn>>): Promise<this> {
+  private async _execJobs(jobs: Map<string, Set<AsyncFn>>): Promise<unknown> {
+    const results: unknown[] = []
+
     for (const [identifier, fns] of jobs.entries()) {
       for (const fn of fns) {
         this._log('functionsExecutions')('debug')(
           `Execute "${identifier}" jobs function(s)`
         )
 
-        await fn()
+        results.push(await fn())
       }
     }
 
-    return this
+    return results.length === 1 ? results.pop() : results
   }
 
   /**

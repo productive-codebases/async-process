@@ -128,6 +128,38 @@ describe('AsyncProcess', () => {
 
         expect(doSomethingAfterAsyncProcess).toHaveBeenCalled()
       })
+
+      it('should expose the result', async () => {
+        const fetchData = jest
+          .fn()
+          .mockImplementation(() => Promise.resolve({ foo: 'bar' }))
+
+        const asyncProcess =
+          getAsyncProcessTestInstance('loadFoo').do(fetchData)
+
+        await asyncProcess.start()
+
+        expect(asyncProcess.result).toEqual({ foo: 'bar' })
+      })
+
+      it('should expose the result as an array is multiple jobs', async () => {
+        const fetchData1 = jest
+          .fn()
+          .mockImplementation(() => Promise.resolve({ foo: 'bar' }))
+
+        const fetchData2 = jest
+          .fn()
+          .mockImplementation(() => Promise.resolve({ foo2: 'bar2' }))
+
+        const asyncProcess = getAsyncProcessTestInstance('loadFoo').do([
+          fetchData1,
+          fetchData2
+        ])
+
+        await asyncProcess.start()
+
+        expect(asyncProcess.result).toEqual([{ foo: 'bar' }, { foo2: 'bar2' }])
+      })
     })
 
     describe('On error', () => {
@@ -164,12 +196,14 @@ describe('AsyncProcess', () => {
       })
 
       it('should pass the Error to error functions', async () => {
-        const error = new Error('Something bad happened')
+        class CustomError {
+          constructor(readonly error: string) {}
+        }
 
         const fetchData = (): Promise<any> => {
           return new Promise((_, reject) => {
             setTimeout(() => {
-              reject(error)
+              reject(new CustomError('Something bad happened'))
             }, 50)
           })
         }
@@ -182,7 +216,9 @@ describe('AsyncProcess', () => {
 
         await asyncProcess.start()
 
-        expect(onErrorFn).toHaveBeenCalledWith(error)
+        expect(onErrorFn).toHaveBeenCalledWith(
+          new CustomError('Something bad happened')
+        )
       })
 
       it('should expose the Error object as it', async () => {
