@@ -11,9 +11,9 @@ type AsyncProcessTestIdentifier = 'loadFoo' | 'loadBar'
 
 describe('AsyncProcess', () => {
   describe.each<IAsyncProcessOptions>([
-    { deleteFunctionsWhenStarted: false },
-    { deleteFunctionsWhenStarted: true }
-  ])('With options: %o', ({ deleteFunctionsWhenStarted }) => {
+    { deleteFunctionsWhenJobsStarted: false },
+    { deleteFunctionsWhenJobsStarted: true }
+  ])('With options: %o', ({ deleteFunctionsWhenJobsStarted }) => {
     let data: Maybe<IData> = null
 
     const setData = (data_: any) => {
@@ -25,7 +25,7 @@ describe('AsyncProcess', () => {
       subIdentifiers?: string[]
     ): AsyncProcess<AsyncProcessTestIdentifier> {
       return AsyncProcess.instance(identifier, subIdentifiers).setOptions({
-        deleteFunctionsWhenStarted
+        deleteFunctionsWhenJobsStarted
       })
     }
 
@@ -240,6 +240,9 @@ describe('AsyncProcess', () => {
 
           // register only `startSpy2` because added last
           expect(foo1.fns.onStartFns.size).toBe(1)
+          expect(Array.from(foo1.fns.onStartFns.values())).toEqual([
+            new Set([startSpy2])
+          ])
         })
       })
 
@@ -443,7 +446,7 @@ describe('AsyncProcess', () => {
 
         // Count the number of additions (by uniq identifiers) of onStartFns entries
         expect(asyncProcess.fns.onStartFns.size).toEqual(
-          deleteFunctionsWhenStarted ? 0 : 4
+          deleteFunctionsWhenJobsStarted ? 0 : 4
         )
 
         expect(data).toEqual({
@@ -503,7 +506,7 @@ describe('AsyncProcess', () => {
     })
 
     describe('Options', () => {
-      describe('deleteFunctionsWhenStarted', () => {
+      describe('deleteFunctionsWhenJobsStarted', () => {
         it('should reset functions when async process is started', async () => {
           const successSpy1 = jest.fn()
           const successSpy2 = jest.fn()
@@ -521,7 +524,7 @@ describe('AsyncProcess', () => {
           foo1.onSuccess(successSpy3, 'success3')
 
           expect(foo1.fns.onSuccessFns.size).toBe(
-            deleteFunctionsWhenStarted ? 1 : 3
+            deleteFunctionsWhenJobsStarted ? 1 : 3
           )
         })
       })

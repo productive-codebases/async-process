@@ -25,7 +25,7 @@ export class AsyncProcess<TIdentifier extends string> {
      * When set to true, registered functions are deleted after AsyncProcess has been started.
      * Useful when reusing a same instance of AsyncProcess to not have functions registered several times.
      */
-    deleteFunctionsWhenStarted: false
+    deleteFunctionsWhenJobsStarted: false
   }
 
   private _error: Maybe<Error> = null
@@ -201,7 +201,7 @@ export class AsyncProcess<TIdentifier extends string> {
    * Reset functions.
    */
   shouldResetFunctions(): this {
-    if (!this._options.deleteFunctionsWhenStarted) {
+    if (!this._options.deleteFunctionsWhenJobsStarted) {
       return this
     }
 

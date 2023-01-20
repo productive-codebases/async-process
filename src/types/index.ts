@@ -29,5 +29,5 @@ export type AsyncProcessIdentifiers<TIdentifier extends string> = [
 
 export interface IAsyncProcessOptions {
   // delete registered functions when async process is started
-  deleteFunctionsWhenStarted: boolean
+  deleteFunctionsWhenJobsStarted: boolean
 }
