@@ -8,9 +8,15 @@
 
 - :warning: **[breaking-change]** Add an identifier for predicates functions to mimic to same behavior as functions registrations. Several predicate functions can now be passed in a single `if()` with a defined identifier. In the same way, if an another `if()` predicate is set with the same identifier, **it will override the previous one**.
 
-- Add an option `deleteFunctionsWhenJobsStarted` allowing to delete the registered functions when the jobs are started.
+- Add `deleteFunctionsWhenJobsStarted` option allowing to delete the registered functions when the jobs are started.
 
-- Add an option `debug.logFunctionRegistrations` and `debug.logFunctionExecutions` to debug functions registrations and executions. Don't forget to set `DEBUG=AsyncProcess:*` as an environment variable or in your browser's localstorage.
+- Add `debug.logFunctionRegistrations` and `debug.logFunctionExecutions` options allowing functions registrations and executions logs. Don't forget to set `DEBUG=AsyncProcess:*` as an environment variable or in your browser's localstorage.
+
+- Keep errors thrown by jobs as it.
+
+  Example: If the job is a fetch query and if the response is a 404, the `err` object will be a Response object.
+
+- AsyncProcess instances now accepts two more generics, a results (`R`) and an error (`E`), allowing to type results and error.
 
 ## v1.2.0
 
