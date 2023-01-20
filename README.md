@@ -71,9 +71,9 @@ It's important to note that nothing is happening unless the `start` function is 
 
 In order to retrieve the same `AsyncProcess` declarations accross your application, `AsyncProcess` is an unique singleton that saves all instances.
 
-Each instance are referenced via an identifer and optional sub identifiers.
+Each instance are referenced via an identifer and optional sub identifiers. There is no inheritance between AsyncProcess instances meaning that an instance with a same identifier but different sub-identifiers are two different instances.
 
-The first identifier can be typed, typically by using an union of different string values, allowing to retrieve your instances in a safe way. Optional sub identifiers can be used for uuid or any arguments that identify your async process more precisely.
+The first identifier can be typed, typically by using an union of different string values, allowing to retrieve your instances in a safe way. Optional sub identifiers are generally used by [composite functions](#composition) (`with(...)`) for internal AsyncProcess instances.
 
 ### Typed identifiers
 
