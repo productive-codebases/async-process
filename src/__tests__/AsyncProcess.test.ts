@@ -21,12 +21,6 @@ describe('AsyncProcess', () => {
       }
     }
   ])('With options: %o', options => {
-    let data: Maybe<IData> = null
-
-    const setData = (data_: any) => {
-      data = data_
-    }
-
     function getAsyncProcessTestInstance(
       identifier: AsyncProcessTestIdentifier,
       subIdentifiers?: string[]
@@ -37,21 +31,14 @@ describe('AsyncProcess', () => {
     }
 
     beforeEach(() => {
-      data = null
       AsyncProcess.clearInstances()
     })
 
     describe('On success', () => {
       it('should call the onStart / onSuccess fn(s)', async () => {
-        const fetchData = (): Promise<null> => {
-          return new Promise(resolve => {
-            setTimeout(() => {
-              setData({ id: 1, name: 'Bob' })
-              resolve(null)
-            }, 50)
-          })
-        }
-
+        const fetchData = jest
+          .fn()
+          .mockImplementation(() => Promise.resolve({ id: 1, name: 'Bob' }))
         const onStartFns = [jest.fn(), jest.fn()]
         const onSuccessFns = [jest.fn()]
         const onErrorFn = jest.fn()
@@ -73,21 +60,10 @@ describe('AsyncProcess', () => {
         })
 
         expect(onErrorFn).not.toHaveBeenCalled()
-
-        expect(data).toEqual({
-          id: 1,
-          name: 'Bob'
-        })
       })
 
       it('should call the functions sequentially', async () => {
-        const fetchData = (): Promise<null> => {
-          return new Promise(resolve => {
-            setTimeout(() => {
-              resolve(null)
-            }, 50)
-          })
-        }
+        const fetchData = jest.fn().mockImplementation(() => Promise.resolve())
 
         const successValues: number[] = []
 
@@ -111,13 +87,7 @@ describe('AsyncProcess', () => {
       })
 
       it('should return a success promise', async () => {
-        const fetchData = (): Promise<null> => {
-          return new Promise(resolve => {
-            setTimeout(() => {
-              resolve(null)
-            }, 50)
-          })
-        }
+        const fetchData = jest.fn().mockImplementation(() => Promise.resolve())
 
         const asyncProcess =
           getAsyncProcessTestInstance('loadFoo').do(fetchData)
@@ -164,14 +134,11 @@ describe('AsyncProcess', () => {
 
     describe('On error', () => {
       it('should call the onStart / onError fn(s)', async () => {
-        const fetchData = (): Promise<any> => {
-          return new Promise((_, reject) => {
-            setTimeout(() => {
-              reject(new Error('Something bad happened'))
-            }, 50)
-          })
-        }
-
+        const fetchData = jest
+          .fn()
+          .mockImplementation(() =>
+            Promise.reject(new Error('Something bad happened'))
+          )
         const onStartFns = [jest.fn(), jest.fn()]
         const onSuccessFns = [jest.fn()]
         const onErrorFn = jest.fn()
@@ -192,7 +159,7 @@ describe('AsyncProcess', () => {
           expect(onSuccessFn).not.toHaveBeenCalled()
         })
 
-        expect(data).toEqual(null)
+        expect(asyncProcess.result).toEqual(null)
       })
 
       it('should pass the Error to error functions', async () => {
@@ -200,14 +167,11 @@ describe('AsyncProcess', () => {
           constructor(readonly error: string) {}
         }
 
-        const fetchData = (): Promise<any> => {
-          return new Promise((_, reject) => {
-            setTimeout(() => {
-              reject(new CustomError('Something bad happened'))
-            }, 50)
-          })
-        }
-
+        const fetchData = jest
+          .fn()
+          .mockImplementation(() =>
+            Promise.reject(new CustomError('Something bad happened'))
+          )
         const onErrorFn = jest.fn()
 
         const asyncProcess = getAsyncProcessTestInstance('loadFoo')
@@ -226,20 +190,16 @@ describe('AsyncProcess', () => {
           constructor(readonly error: string) {}
         }
 
-        const fetchData = (): Promise<any> => {
-          return new Promise((_, reject) => {
-            setTimeout(() => {
-              reject(new CustomError('Something bad happened'))
-            }, 50)
-          })
-        }
-
+        const fetchData = jest
+          .fn()
+          .mockImplementation(() =>
+            Promise.reject(new CustomError('Something bad happened'))
+          )
         const asyncProcess =
           getAsyncProcessTestInstance('loadFoo').do(fetchData)
 
         await asyncProcess.start()
 
-        expect(data).toEqual(null)
         expect(asyncProcess.error).toBeInstanceOf(CustomError)
         expect(asyncProcess.error).toEqual(
           new CustomError('Something bad happened')
@@ -247,13 +207,7 @@ describe('AsyncProcess', () => {
       })
 
       it('should return a success promise even if an error occurred', async () => {
-        const fetchData = (): Promise<null> => {
-          return new Promise((_, reject) => {
-            setTimeout(() => {
-              reject()
-            }, 50)
-          })
-        }
+        const fetchData = jest.fn().mockImplementation(() => Promise.reject())
 
         let errorMessage: Maybe<string> = null
 
@@ -444,14 +398,9 @@ describe('AsyncProcess', () => {
 
     describe('AsyncProcess composition', () => {
       it('should compose AsyncProcess instances', async () => {
-        const fetchData = (): Promise<null> => {
-          return new Promise(resolve => {
-            setTimeout(() => {
-              setData({ id: 1, name: 'Bob' })
-              resolve(null)
-            }, 50)
-          })
-        }
+        const fetchData = jest
+          .fn()
+          .mockImplementation(() => Promise.resolve({ id: 1, name: 'Bob' }))
 
         const onStartFn0 = jest.fn()
         const onStartFn1 = jest.fn()
@@ -506,7 +455,7 @@ describe('AsyncProcess', () => {
           options.deleteFunctionsWhenJobsStarted ? 0 : 4
         )
 
-        expect(data).toEqual({
+        expect(asyncProcess.result).toEqual({
           id: 1,
           name: 'Bob'
         })
