@@ -1,11 +1,16 @@
-import { ensureArray, Maybe, MetaData } from '@productive-codebases/toolbox'
+import {
+  deepMerge,
+  ensureArray,
+  Maybe,
+  MetaData
+} from '@productive-codebases/toolbox'
 import { LoggerLevel } from '@productive-codebases/toolbox/dist/types/libs/logger/types'
 import { logger, LoggerNamespace } from '../logger'
 import {
-  AsyncErrorFn,
   AsyncErrorFns,
-  AsyncFn,
   AsyncProcessIdentifiers,
+  FnOrAsyncErrorFn,
+  FnOrAsyncFn,
   IAsyncProcessFns,
   IAsyncProcessOptions,
   Jobs,
@@ -17,7 +22,7 @@ import {
  * and executes functions according to the successes / errors.
  */
 
-export class AsyncProcess<TIdentifier extends string> {
+export class AsyncProcess<TIdentifier extends string, R = any> {
   public metadata = new MetaData()
 
   private _identifiers: AsyncProcessIdentifiers<TIdentifier>
@@ -35,9 +40,9 @@ export class AsyncProcess<TIdentifier extends string> {
   }
 
   private _error: Maybe<unknown> = null
-  private _result: Maybe<unknown> = null
+  private _result: Maybe<R> = null
 
-  private _fns: IAsyncProcessFns = {
+  private _fns: IAsyncProcessFns<R> = {
     jobs: new Map(),
     onStartFns: new Map(),
     onSuccessFns: new Map(),
@@ -83,7 +88,7 @@ export class AsyncProcess<TIdentifier extends string> {
   /**
    * Save jobs function(s).
    */
-  do(jobs: Jobs, identifier = 'defaultJobs'): this {
+  do(jobs: Jobs<R>, identifier = 'defaultJobs'): this {
     this._log('functionsRegistrations')('debug')(
       `Register "${identifier}" jobs function(s)`
     )
@@ -106,7 +111,7 @@ export class AsyncProcess<TIdentifier extends string> {
   /**
    * Save functions to execute before starting jobs.
    */
-  onStart(jobs: Jobs, identifier = 'defaultOnStart'): this {
+  onStart(jobs: Jobs<R>, identifier = 'defaultOnStart'): this {
     this._log('functionsRegistrations')('debug')(
       `Register "${identifier}" onStart function(s)`
     )
@@ -118,7 +123,7 @@ export class AsyncProcess<TIdentifier extends string> {
   /**
    * Save functions to execute after jobs are succesful.
    */
-  onSuccess(jobs: Jobs, identifier = 'defaultOnSuccess'): this {
+  onSuccess(jobs: Jobs<R>, identifier = 'defaultOnSuccess'): this {
     this._log('functionsRegistrations')('debug')(
       `Register "${identifier}" onSuccess function(s)`
     )
@@ -261,7 +266,7 @@ export class AsyncProcess<TIdentifier extends string> {
    * Getters
    */
 
-  get fns(): IAsyncProcessFns {
+  get fns(): IAsyncProcessFns<R> {
     return this._fns
   }
 
@@ -269,7 +274,7 @@ export class AsyncProcess<TIdentifier extends string> {
     return this._error
   }
 
-  get result(): Maybe<unknown> {
+  get result(): Maybe<R> {
     return this._result
   }
 
@@ -280,8 +285,10 @@ export class AsyncProcess<TIdentifier extends string> {
   /**
    * Execute sequentially async functions.
    */
-  private async _execJobs(jobs: Map<string, Set<AsyncFn>>): Promise<unknown> {
-    const results: unknown[] = []
+  private async _execJobs(
+    jobs: Map<string, Set<FnOrAsyncFn<R>>>
+  ): Promise<Maybe<R>> {
+    let results: Maybe<R> = null
 
     for (const [identifier, fns] of jobs.entries()) {
       for (const fn of fns) {
@@ -289,11 +296,11 @@ export class AsyncProcess<TIdentifier extends string> {
           `Execute "${identifier}" jobs function(s)`
         )
 
-        results.push(await fn())
+        results = deepMerge([results, await fn()])
       }
     }
 
-    return results.length === 1 ? results.pop() : results
+    return results
   }
 
   /**
@@ -301,7 +308,7 @@ export class AsyncProcess<TIdentifier extends string> {
    */
   private async _execAsyncErrorFns(
     err: unknown,
-    asyncErrorFns: Map<string, Set<AsyncErrorFn>>
+    asyncErrorFns: Map<string, Set<FnOrAsyncErrorFn>>
   ): Promise<this> {
     for (const [identifier, fns] of asyncErrorFns.entries()) {
       for (const fn of fns) {

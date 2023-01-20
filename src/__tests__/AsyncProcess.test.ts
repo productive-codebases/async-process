@@ -3,11 +3,6 @@ import { AsyncProcess } from '../AsyncProcess'
 import { debug } from '../logger'
 import { IAsyncProcessOptions } from '../types'
 
-interface IData {
-  id: number
-  name: string
-}
-
 type AsyncProcessTestIdentifier = 'loadFoo' | 'loadBar'
 
 describe('AsyncProcess', () => {
@@ -21,10 +16,10 @@ describe('AsyncProcess', () => {
       }
     }
   ])('With options: %o', options => {
-    function getAsyncProcessTestInstance(
+    function getAsyncProcessTestInstance<R>(
       identifier: AsyncProcessTestIdentifier,
       subIdentifiers?: string[]
-    ): AsyncProcess<AsyncProcessTestIdentifier> {
+    ): AsyncProcess<AsyncProcessTestIdentifier, R> {
       return AsyncProcess.instance(identifier, subIdentifiers).setOptions(
         options
       )
@@ -104,8 +99,10 @@ describe('AsyncProcess', () => {
           .fn()
           .mockImplementation(() => Promise.resolve({ foo: 'bar' }))
 
-        const asyncProcess =
-          getAsyncProcessTestInstance('loadFoo').do(fetchData)
+        // typings are only indicative, no validation is sone by AsyncProcess
+        const asyncProcess = getAsyncProcessTestInstance<{ foo: string }>(
+          'loadFoo'
+        ).do(fetchData)
 
         await asyncProcess.start()
 
@@ -128,7 +125,7 @@ describe('AsyncProcess', () => {
 
         await asyncProcess.start()
 
-        expect(asyncProcess.result).toEqual([{ foo: 'bar' }, { foo2: 'bar2' }])
+        expect(asyncProcess.result).toEqual({ foo: 'bar', foo2: 'bar2' })
       })
     })
 

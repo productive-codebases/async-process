@@ -1,10 +1,10 @@
 import { Maybe } from '@productive-codebases/toolbox'
 import { AsyncProcess } from '../AsyncProcess'
 
-export type Fn = () => any
-export type AsyncFn = () => Promise<any>
-export type FnOrAsyncFn = Fn | AsyncFn
-export type Jobs = FnOrAsyncFn | Array<FnOrAsyncFn>
+export type Fn<R> = () => R
+export type AsyncFn<R> = () => Promise<R>
+export type FnOrAsyncFn<R> = Fn<R> | AsyncFn<R>
+export type Jobs<R> = FnOrAsyncFn<R> | Array<FnOrAsyncFn<R>>
 
 export type ErrorFn = (err: unknown) => any
 export type AsyncErrorFn = (err: unknown) => Promise<any>
@@ -19,11 +19,11 @@ export type PredicateFns<TIdentifier extends string> =
   | PredicateFn<TIdentifier>
   | Array<PredicateFn<TIdentifier>>
 
-export interface IAsyncProcessFns {
-  jobs: Map<string, Set<AsyncFn>>
-  onStartFns: Map<string, Set<AsyncFn>>
-  onSuccessFns: Map<string, Set<AsyncFn>>
-  onErrorFns: Map<string, Set<AsyncErrorFn>>
+export interface IAsyncProcessFns<R> {
+  jobs: Map<string, Set<FnOrAsyncFn<R>>>
+  onStartFns: Map<string, Set<FnOrAsyncFn<R>>>
+  onSuccessFns: Map<string, Set<FnOrAsyncFn<R>>>
+  onErrorFns: Map<string, Set<FnOrAsyncErrorFn>>
   predicateFns: Map<string, Set<PredicateFn<any>>>
 }
 
