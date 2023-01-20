@@ -1,0 +1,37 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`AsyncProcess With options: {
+  debug: { logFunctionRegistrations: true, logFunctionExecutions: true }
+} Options Logging should log different events if error 1`] = `
+[
+  "AsyncProcess:functionsRegistrations:debug [loadFoo] Register jobs function(s) with the identifier "defaultJobs"",
+  "AsyncProcess:functionsRegistrations:debug [loadFoo] Register onStart function(s) with the identifier "defaultOnStart"",
+  "AsyncProcess:functionsRegistrations:debug [loadFoo] Register onSuccess function(s) with the identifier "defaultOnSuccess"",
+  "AsyncProcess:functionsRegistrations:debug [loadFoo] Register onError function(s) with the identifier "defaultOnError"",
+  "AsyncProcess:functionsExecutions:debug [loadFoo] Execute jobs functions with the identifier "defaultOnStart"",
+  "AsyncProcess:functionsExecutions:debug [loadFoo] Execute jobs functions with the identifier "defaultJobs"",
+  "AsyncProcess:functionsExecutions:debug [loadFoo] Execute onError functions with the identifier "defaultOnError"",
+]
+`;
+
+exports[`AsyncProcess With options: {
+  debug: { logFunctionRegistrations: true, logFunctionExecutions: true }
+} Options Logging should log different events if success 1`] = `
+[
+  "AsyncProcess:functionsRegistrations:debug [loadFoo] Register jobs function(s) with the identifier "defaultJobs"",
+  "AsyncProcess:functionsRegistrations:debug [loadFoo] Register onStart function(s) with the identifier "defaultOnStart"",
+  "AsyncProcess:functionsRegistrations:debug [loadFoo] Register onSuccess function(s) with the identifier "defaultOnSuccess"",
+  "AsyncProcess:functionsRegistrations:debug [loadFoo] Register onError function(s) with the identifier "defaultOnError"",
+  "AsyncProcess:functionsExecutions:debug [loadFoo] Execute jobs functions with the identifier "defaultOnStart"",
+  "AsyncProcess:functionsExecutions:debug [loadFoo] Execute jobs functions with the identifier "defaultJobs"",
+  "AsyncProcess:functionsExecutions:debug [loadFoo] Execute jobs functions with the identifier "defaultOnSuccess"",
+]
+`;
+
+exports[`AsyncProcess With options: { deleteFunctionsWhenJobsStarted: false } Options Logging should log different events if error 1`] = `[]`;
+
+exports[`AsyncProcess With options: { deleteFunctionsWhenJobsStarted: false } Options Logging should log different events if success 1`] = `[]`;
+
+exports[`AsyncProcess With options: { deleteFunctionsWhenJobsStarted: true } Options Logging should log different events if error 1`] = `[]`;
+
+exports[`AsyncProcess With options: { deleteFunctionsWhenJobsStarted: true } Options Logging should log different events if success 1`] = `[]`;

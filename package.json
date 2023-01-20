@@ -15,7 +15,7 @@
     "check:code": "tsc --noEmit",
     "lint": "eslint .",
     "prepublishOnly": "npm run check:code && npm run lint && npm t && npm run build",
-    "test": "jest"
+    "test": "DEBUG_COLORS=0 DEBUG_HIDE_DATE=true jest"
   },
   "devDependencies": {
     "@types/jest": "^29.2.5",

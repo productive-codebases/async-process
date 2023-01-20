@@ -1,12 +1,14 @@
 import { ensureArray, Maybe, MetaData } from '@productive-codebases/toolbox'
+import { LoggerLevel } from '@productive-codebases/toolbox/dist/types/libs/logger/types'
+import { logger, LoggerNamespace } from '../logger'
 import {
   AsyncErrorFn,
   AsyncErrorFns,
   AsyncFn,
-  Jobs,
   AsyncProcessIdentifiers,
   IAsyncProcessFns,
   IAsyncProcessOptions,
+  Jobs,
   PredicateFn
 } from '../types'
 
@@ -25,7 +27,11 @@ export class AsyncProcess<TIdentifier extends string> {
      * When set to true, registered functions are deleted after AsyncProcess has been started.
      * Useful when reusing a same instance of AsyncProcess to not have functions registered several times.
      */
-    deleteFunctionsWhenJobsStarted: false
+    deleteFunctionsWhenJobsStarted: false,
+    debug: {
+      logFunctionRegistrations: false,
+      logFunctionExecutions: false
+    }
   }
 
   private _error: Maybe<Error> = null
@@ -69,15 +75,19 @@ export class AsyncProcess<TIdentifier extends string> {
   /**
    * Set AsyncProcess options.
    */
-  setOptions(options: IAsyncProcessOptions): this {
-    this._options = options
+  setOptions(options: Partial<IAsyncProcessOptions>): this {
+    this._options = { ...this._options, ...options }
     return this
   }
 
   /**
    * Save jobs function(s).
    */
-  do(jobs: Jobs, identifier = 'do'): this {
+  do(jobs: Jobs, identifier = 'defaultJobs'): this {
+    this._log('functionsRegistrations')('debug')(
+      `Register jobs function(s) with the identifier "${identifier}"`
+    )
+
     this._fns.jobs.set(identifier, new Set(ensureArray(jobs)))
     return this
   }
@@ -93,7 +103,11 @@ export class AsyncProcess<TIdentifier extends string> {
   /**
    * Save functions to execute before starting jobs.
    */
-  onStart(jobs: Jobs, identifier = 'onStart'): this {
+  onStart(jobs: Jobs, identifier = 'defaultOnStart'): this {
+    this._log('functionsRegistrations')('debug')(
+      `Register onStart function(s) with the identifier "${identifier}"`
+    )
+
     this._fns.onStartFns.set(identifier, new Set(ensureArray(jobs)))
     return this
   }
@@ -101,7 +115,11 @@ export class AsyncProcess<TIdentifier extends string> {
   /**
    * Save functions to execute after jobs are succesful.
    */
-  onSuccess(jobs: Jobs, identifier = 'onSuccess'): this {
+  onSuccess(jobs: Jobs, identifier = 'defaultOnSuccess'): this {
+    this._log('functionsRegistrations')('debug')(
+      `Register onSuccess function(s) with the identifier "${identifier}"`
+    )
+
     this._fns.onSuccessFns.set(identifier, new Set(ensureArray(jobs)))
     return this
   }
@@ -109,7 +127,11 @@ export class AsyncProcess<TIdentifier extends string> {
   /**
    * Save functions to execute after jobs are succesful.
    */
-  onError(jobs: AsyncErrorFns, identifier = 'onError'): this {
+  onError(jobs: AsyncErrorFns, identifier = 'defaultOnError'): this {
+    this._log('functionsRegistrations')('debug')(
+      `Register onError function(s) with the identifier "${identifier}"`
+    )
+
     this._fns.onErrorFns.set(identifier, new Set(ensureArray(jobs)))
     return this
   }
@@ -158,6 +180,13 @@ export class AsyncProcess<TIdentifier extends string> {
   }
 
   /**
+   * Return all identifiers as a string.
+   */
+  get identitiersAsString(): string {
+    return this._identifiers.filter(Boolean).join('/')
+  }
+
+  /**
    * Start jobs and executes registered functions.
    */
   async start(): Promise<this> {
@@ -167,7 +196,7 @@ export class AsyncProcess<TIdentifier extends string> {
       if (this._predicateFns && !(await this.shouldStart())) {
         await this._execJobs(this._fns.onSuccessFns)
 
-        this.shouldResetFunctions()
+        this.shouldDeleteFunctions()
 
         return this
       }
@@ -176,7 +205,7 @@ export class AsyncProcess<TIdentifier extends string> {
       await this._execJobs(this._fns.jobs)
       await this._execJobs(this._fns.onSuccessFns)
 
-      this.shouldResetFunctions()
+      this.shouldDeleteFunctions()
     } catch (err) {
       this._error = err instanceof Error ? err : new Error('Unknown error')
       this._execAsyncErrorFns(this._error, this._fns.onErrorFns)
@@ -191,6 +220,10 @@ export class AsyncProcess<TIdentifier extends string> {
   async shouldStart(): Promise<boolean> {
     for (const predicateFn of this._predicateFns) {
       if (!(await predicateFn(this))) {
+        this._log('functionsExecutions')('debug')(
+          `Skip jobs execution because predicate is falsy`
+        )
+
         return false
       }
     }
@@ -198,12 +231,16 @@ export class AsyncProcess<TIdentifier extends string> {
   }
 
   /**
-   * Reset functions.
+   * Delete functions.
    */
-  shouldResetFunctions(): this {
+  shouldDeleteFunctions(): this {
     if (!this._options.deleteFunctionsWhenJobsStarted) {
       return this
     }
+
+    this._log('functionsRegistrations')('debug')(
+      `Delete functions after starting jobs`
+    )
 
     this._fns = {
       jobs: new Map(),
@@ -234,36 +271,47 @@ export class AsyncProcess<TIdentifier extends string> {
   /**
    * Execute sequentially async functions.
    */
-  private _execJobs(jobs: Map<string, Set<AsyncFn>>): Promise<this> {
-    return Array.from(jobs.values())
-      .reduce<AsyncFn[]>(
-        (acc, fns_) => acc.concat(Array.from(fns_.values())),
-        []
-      )
-      .reduce(
-        (promise, nextFn) => promise.then(() => nextFn()),
-        Promise.resolve(null)
-      )
-      .then(() => this)
+  private async _execJobs(jobs: Map<string, Set<AsyncFn>>): Promise<this> {
+    for (const [identifier, fns] of jobs.entries()) {
+      for (const fn of fns) {
+        this._log('functionsExecutions')('debug')(
+          `Execute jobs functions with the identifier "${identifier}"`
+        )
+
+        await fn()
+      }
+    }
+
+    return this
   }
 
   /**
    * Execute sequentially async error functions.
    */
-  private _execAsyncErrorFns(
+  private async _execAsyncErrorFns(
     err: Error,
     asyncErrorFns: Map<string, Set<AsyncErrorFn>>
   ): Promise<this> {
-    return Array.from(asyncErrorFns.values())
-      .reduce<AsyncErrorFn[]>(
-        (acc, fns_) => acc.concat(Array.from(fns_.values())),
-        []
-      )
-      .reduce(
-        (promise, nextFn) => promise.then(() => nextFn(err)),
-        Promise.resolve(null)
-      )
-      .then(() => this)
+    for (const [identifier, fns] of asyncErrorFns.entries()) {
+      for (const fn of fns) {
+        this._log('functionsExecutions')('debug')(
+          `Execute onError functions with the identifier "${identifier}"`
+        )
+
+        await fn(err)
+      }
+    }
+
+    return this
+  }
+
+  /**
+   * Log with AsyncProcess identifier prefix.
+   */
+  private _log(namespace: LoggerNamespace) {
+    return (level: LoggerLevel) => (message: string) => {
+      logger(namespace)(level)(`[${this.identitiersAsString}] ${message}`)
+    }
   }
 
   /**
@@ -305,6 +353,9 @@ export class AsyncProcess<TIdentifier extends string> {
     identifier: TIdentifier,
     subIdentifiers?: Maybe<string[]>
   ): AsyncProcessIdentifiers<TIdentifier> {
-    return [identifier, subIdentifiers ? subIdentifiers.join('/') : null]
+    return [
+      identifier,
+      subIdentifiers ? subIdentifiers.filter(Boolean).join('/') : null
+    ]
   }
 }

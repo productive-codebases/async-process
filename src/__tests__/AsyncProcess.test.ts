@@ -1,5 +1,6 @@
 import { Maybe } from '@productive-codebases/toolbox'
 import { AsyncProcess } from '../AsyncProcess'
+import { debug, logger } from '../logger'
 import { IAsyncProcessOptions } from '../types'
 
 interface IData {
@@ -10,10 +11,16 @@ interface IData {
 type AsyncProcessTestIdentifier = 'loadFoo' | 'loadBar'
 
 describe('AsyncProcess', () => {
-  describe.each<IAsyncProcessOptions>([
+  describe.each<Partial<IAsyncProcessOptions>>([
     { deleteFunctionsWhenJobsStarted: false },
-    { deleteFunctionsWhenJobsStarted: true }
-  ])('With options: %o', ({ deleteFunctionsWhenJobsStarted }) => {
+    { deleteFunctionsWhenJobsStarted: true },
+    {
+      debug: {
+        logFunctionRegistrations: true,
+        logFunctionExecutions: true
+      }
+    }
+  ])('With options: %o', options => {
     let data: Maybe<IData> = null
 
     const setData = (data_: any) => {
@@ -24,9 +31,9 @@ describe('AsyncProcess', () => {
       identifier: AsyncProcessTestIdentifier,
       subIdentifiers?: string[]
     ): AsyncProcess<AsyncProcessTestIdentifier> {
-      return AsyncProcess.instance(identifier, subIdentifiers).setOptions({
-        deleteFunctionsWhenJobsStarted
-      })
+      return AsyncProcess.instance(identifier, subIdentifiers).setOptions(
+        options
+      )
     }
 
     beforeEach(() => {
@@ -446,7 +453,7 @@ describe('AsyncProcess', () => {
 
         // Count the number of additions (by uniq identifiers) of onStartFns entries
         expect(asyncProcess.fns.onStartFns.size).toEqual(
-          deleteFunctionsWhenJobsStarted ? 0 : 4
+          options.deleteFunctionsWhenJobsStarted ? 0 : 4
         )
 
         expect(data).toEqual({
@@ -524,8 +531,80 @@ describe('AsyncProcess', () => {
           foo1.onSuccess(successSpy3, 'success3')
 
           expect(foo1.fns.onSuccessFns.size).toBe(
-            deleteFunctionsWhenJobsStarted ? 1 : 3
+            options.deleteFunctionsWhenJobsStarted ? 1 : 3
           )
+        })
+      })
+
+      describe('Logging', () => {
+        // Mock the log function
+        let logs: any[] = []
+
+        beforeEach(() => {
+          debug.enable(
+            options.debug?.logFunctionExecutions ? 'AsyncProcess:*' : false
+          )
+
+          debug.formatters.s = (s: string) => {
+            return s
+          }
+
+          debug.log = (...args: any[]) => {
+            logs.push(...args)
+          }
+        })
+
+        afterEach(() => {
+          // reset logs for each test
+          logs = []
+        })
+
+        it('should log different events if success', async () => {
+          const fetchData = jest.fn()
+          const predicateFn1 = jest.fn().mockImplementation(() => true)
+          const onStartFn = jest.fn()
+          const onSuccessFn = jest.fn()
+          const onErrorFn = jest.fn()
+
+          await getAsyncProcessTestInstance('loadFoo')
+            .setOptions({
+              debug: {
+                logFunctionRegistrations: true,
+                logFunctionExecutions: true
+              }
+            })
+            .do(fetchData)
+            .if(predicateFn1)
+            .onStart(onStartFn)
+            .onSuccess(onSuccessFn)
+            .onError(onErrorFn)
+            .start()
+
+          expect(logs).toMatchSnapshot()
+        })
+
+        it('should log different events if error', async () => {
+          const fetchData = jest.fn().mockImplementation(() => Promise.reject())
+          const predicateFn1 = jest.fn().mockImplementation(() => true)
+          const onStartFn = jest.fn()
+          const onSuccessFn = jest.fn()
+          const onErrorFn = jest.fn()
+
+          await getAsyncProcessTestInstance('loadFoo')
+            .setOptions({
+              debug: {
+                logFunctionRegistrations: true,
+                logFunctionExecutions: true
+              }
+            })
+            .do(fetchData)
+            .if(predicateFn1)
+            .onStart(onStartFn)
+            .onSuccess(onSuccessFn)
+            .onError(onErrorFn)
+            .start()
+
+          expect(logs).toMatchSnapshot()
         })
       })
     })
