@@ -1,5 +1,6 @@
 import { AsyncProcess } from '..'
 import { Maybe, MetaData } from '@productive-codebases/toolbox'
+import { PredicateFn } from '../../types'
 
 /**
  * Return a predicate function to trigger async functions
@@ -17,16 +18,35 @@ import { Maybe, MetaData } from '@productive-codebases/toolbox'
  *
  * AsyncProcess.instance(...).metadata.get('expireProcess')()
  */
-interface IOlderDataMetadata {
+interface IOlderThanDataMetadata {
   olderThan: {
     lastDate: number
     cancelDelay: () => void
+    dependencies: OlderThanDependency[]
   }
 }
 
-export function olderThan<TIdentifier extends string>(seconds: number) {
-  return (asyncProcess: AsyncProcess<TIdentifier>): boolean => {
-    const metadata = asyncProcess.metadata as MetaData<IOlderDataMetadata>
+type OlderThanDependency = boolean | string | number
+
+export function olderThan<TIdentifier extends string>(
+  seconds: number,
+  dependencies: OlderThanDependency[] = []
+): PredicateFn<TIdentifier> {
+  function hasDependenciesChanged(previousDependancies: OlderThanDependency[]) {
+    for (let index = 0; index <= dependencies.length; index++) {
+      if (previousDependancies[index] !== dependencies[index]) {
+        return true
+      }
+    }
+
+    return false
+  }
+
+  /**
+   * Predicate function.
+   */
+  return asyncProcess => {
+    const metadata = asyncProcess.metadata as MetaData<IOlderThanDataMetadata>
     const predicateMetadata = metadata.get('olderThan')
 
     if (!predicateMetadata) {
@@ -36,11 +56,17 @@ export function olderThan<TIdentifier extends string>(seconds: number) {
         olderThan: {
           lastDate: newLastDate,
           // when calling expireProcess(), delete lastData to set a new lastDate the next time
-          cancelDelay: () => metadata.delete('olderThan')
+          cancelDelay: () => metadata.delete('olderThan'),
+          dependencies
         }
       })
 
       // load data when setting lastDate for the first time
+      return true
+    }
+
+    // if dependencies has changed, load data
+    if (hasDependenciesChanged(predicateMetadata.dependencies)) {
       return true
     }
 
@@ -57,6 +83,7 @@ export function olderThan<TIdentifier extends string>(seconds: number) {
       })
     }
 
+    // if data is expired, load data
     return isDataExpired
   }
 }
@@ -73,7 +100,7 @@ export function cancelOlderThanDelay<TIdentifier extends string>(
   subIdentifiers?: Maybe<string[]>
 ): void {
   const predicateMetadata = AsyncProcess.instance(identifier, subIdentifiers)
-    .metadata as MetaData<IOlderDataMetadata>
+    .metadata as MetaData<IOlderThanDataMetadata>
 
   const cancelDelayFn = predicateMetadata.get('olderThan')?.cancelDelay
 
