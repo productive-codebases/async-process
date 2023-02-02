@@ -32,11 +32,7 @@ export class AsyncProcess<TIdentifier extends string, R = any, E = any> {
      * When set to true, registered functions are deleted after AsyncProcess has been started.
      * Useful when reusing a same instance of AsyncProcess to not have functions registered several times.
      */
-    deleteFunctionsWhenJobsStarted: false,
-    debug: {
-      logFunctionRegistrations: false,
-      logFunctionExecutions: false
-    }
+    deleteFunctionsWhenJobsStarted: false
   }
 
   private _error: Maybe<E> = null

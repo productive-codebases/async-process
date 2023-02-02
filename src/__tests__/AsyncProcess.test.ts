@@ -6,11 +6,20 @@ import { IAsyncProcessOptions } from '../types'
 type AsyncProcessTestIdentifier = 'loadFoo' | 'loadBar'
 
 describe('AsyncProcess', () => {
-  describe.each<Partial<IAsyncProcessOptions>>([
+  describe.each<
+    Partial<
+      IAsyncProcessOptions & {
+        _debug: {
+          logFunctionRegistrations: boolean
+          logFunctionExecutions: boolean
+        }
+      }
+    >
+  >([
     { deleteFunctionsWhenJobsStarted: false },
     { deleteFunctionsWhenJobsStarted: true },
     {
-      debug: {
+      _debug: {
         logFunctionRegistrations: true,
         logFunctionExecutions: true
       }
@@ -591,7 +600,7 @@ describe('AsyncProcess', () => {
 
         beforeEach(() => {
           debug.enable(
-            options.debug?.logFunctionExecutions ? 'AsyncProcess:*' : false
+            options._debug?.logFunctionExecutions ? 'AsyncProcess:*' : false
           )
 
           debug.formatters.s = (s: string) => {
@@ -616,12 +625,6 @@ describe('AsyncProcess', () => {
           const onErrorFn = jest.fn()
 
           await getAsyncProcessTestInstance('loadFoo')
-            .setOptions({
-              debug: {
-                logFunctionRegistrations: true,
-                logFunctionExecutions: true
-              }
-            })
             .do(fetchData)
             .if(predicateFn1)
             .onStart(onStartFn)
@@ -640,12 +643,6 @@ describe('AsyncProcess', () => {
           const onErrorFn = jest.fn()
 
           const asyncProcess = getAsyncProcessTestInstance('loadFoo')
-            .setOptions({
-              debug: {
-                logFunctionRegistrations: true,
-                logFunctionExecutions: true
-              }
-            })
             .do(fetchData)
             .if(predicateFn1)
             .onStart(onStartFn)
