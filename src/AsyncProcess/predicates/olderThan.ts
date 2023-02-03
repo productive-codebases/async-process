@@ -55,8 +55,7 @@ export function olderThan<TIdentifier extends string>(
       metadata.set({
         olderThan: {
           lastDate: newLastDate,
-          // when calling expireProcess(), delete lastData to set a new lastDate the next time
-          cancelDelay: () => metadata.delete('olderThan'),
+          cancelDelay: () => metadata.clear(),
           dependencies
         }
       })
