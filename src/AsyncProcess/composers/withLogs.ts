@@ -36,12 +36,12 @@ export function withLogs<TIdentifier extends string>(
     ])
       .onStart(() => {
         logger('Start %s', asyncProcess.identifier)
-      })
+      }, identifier)
       .onSuccess(() => {
         logger('Success %s', asyncProcess.identifier)
-      })
+      }, identifier)
       .onError(err => {
         logger('Error %s: %o', asyncProcess.identifier, err)
-      })
+      }, identifier)
   }
 }

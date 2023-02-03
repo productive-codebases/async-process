@@ -1,6 +1,6 @@
 {
   "name": "@productive-codebases/async-process",
-  "version": "1.2.0",
+  "version": "2.0.0-beta.1",
   "description": "Declare, configure and start asynchronous processes with ease.",
   "author": "Alexis MINEAUD",
   "license": "MIT",
@@ -12,10 +12,10 @@
   "types": "dist/types/index.d.ts",
   "scripts": {
     "build": "rm -rf dist && mkdir dist && tsc --project tsconfig.build.json",
-    "check": "tsc --noEmit",
+    "check:code": "tsc --noEmit",
     "lint": "eslint .",
-    "prepublishOnly": "npm run check && npm run lint && npm t && npm run build",
-    "test": "jest"
+    "prepublishOnly": "npm run check:code && npm run lint && npm t && npm run build",
+    "test": "DEBUG_COLORS=0 DEBUG_HIDE_DATE=true jest"
   },
   "devDependencies": {
     "@types/jest": "^29.2.5",

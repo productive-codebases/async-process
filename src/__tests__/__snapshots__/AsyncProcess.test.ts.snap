@@ -1,0 +1,37 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`AsyncProcess With options: {
+  _debug: { logFunctionRegistrations: true, logFunctionExecutions: true }
+} Options Logging should log different events if error 1`] = `
+[
+  "AsyncProcess:functionsRegistrations:debug [loadFoo] Register "defaultJobs" jobs function(s)",
+  "AsyncProcess:functionsRegistrations:debug [loadFoo] Register "defaultOnStart" onStart function(s)",
+  "AsyncProcess:functionsRegistrations:debug [loadFoo] Register "defaultOnSuccess" onSuccess function(s)",
+  "AsyncProcess:functionsRegistrations:debug [loadFoo] Register "defaultOnError" onError function(s)",
+  "AsyncProcess:functionsExecutions:debug [loadFoo] Execute "defaultOnStart" jobs function(s)",
+  "AsyncProcess:functionsExecutions:debug [loadFoo] Execute "defaultJobs" jobs function(s)",
+  "AsyncProcess:functionsExecutions:debug [loadFoo] Execute "defaultOnError" onError function(s)",
+]
+`;
+
+exports[`AsyncProcess With options: {
+  _debug: { logFunctionRegistrations: true, logFunctionExecutions: true }
+} Options Logging should log different events if success 1`] = `
+[
+  "AsyncProcess:functionsRegistrations:debug [loadFoo] Register "defaultJobs" jobs function(s)",
+  "AsyncProcess:functionsRegistrations:debug [loadFoo] Register "defaultOnStart" onStart function(s)",
+  "AsyncProcess:functionsRegistrations:debug [loadFoo] Register "defaultOnSuccess" onSuccess function(s)",
+  "AsyncProcess:functionsRegistrations:debug [loadFoo] Register "defaultOnError" onError function(s)",
+  "AsyncProcess:functionsExecutions:debug [loadFoo] Execute "defaultOnStart" jobs function(s)",
+  "AsyncProcess:functionsExecutions:debug [loadFoo] Execute "defaultJobs" jobs function(s)",
+  "AsyncProcess:functionsExecutions:debug [loadFoo] Execute "defaultOnSuccess" jobs function(s)",
+]
+`;
+
+exports[`AsyncProcess With options: { deleteFunctionsWhenJobsStarted: false } Options Logging should log different events if error 1`] = `[]`;
+
+exports[`AsyncProcess With options: { deleteFunctionsWhenJobsStarted: false } Options Logging should log different events if success 1`] = `[]`;
+
+exports[`AsyncProcess With options: { deleteFunctionsWhenJobsStarted: true } Options Logging should log different events if error 1`] = `[]`;
+
+exports[`AsyncProcess With options: { deleteFunctionsWhenJobsStarted: true } Options Logging should log different events if success 1`] = `[]`;
